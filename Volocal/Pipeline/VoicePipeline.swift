@@ -339,7 +339,7 @@ public final class VoicePipeline: ObservableObject {
 // MARK: - SentenceBuffer
 
 /// Accumulates streaming LLM tokens and emits complete sentences for TTS
-    func flush() -> String? {
+ /*    func flush() -> String? {
         let sentence = buffer.trimmingCharacters(in: .whitespaces)
         buffer = ""
         return sentence.isEmpty ? nil : sentence
@@ -349,3 +349,4 @@ public final class VoicePipeline: ObservableObject {
         buffer = ""
     }
 }
+ */
