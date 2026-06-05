@@ -42,11 +42,12 @@ jobs:
 
       - name: Build the app
         run: |
-          xcodebuild \
+          set -o pipefail 
+          xcodebuild build \
             -scheme Volocal \
-            -configuration Debug \
-            -destination "platform=iOS Simulator,name=iPhone 17" \
-            clean build
+            -configuration Release \
+            -sdk iphoneos
+            | xcbeautify
         env:
           PROJECT_DIR: ${{ github.workspace }}
 
