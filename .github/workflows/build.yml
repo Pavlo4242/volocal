@@ -47,7 +47,10 @@ jobs:
             -scheme Volocal \
             -allowProvisioningUpdates \
             -configuration Release \
-            -sdk iphoneos
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
             | xcbeautify
         env:
           PROJECT_DIR: ${{ github.workspace }}
