@@ -38,7 +38,7 @@ jobs:
             ${{ runner.os }}-deriveddata-
 
       - name: Set up Xcode 
-        run: sudo xcbeautify | xcode-select -s /Applications/Xcode.app/Contents/Developer
+        run: sudo xcbeautify | sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
       - name: Build the app
         run: |
