@@ -45,6 +45,7 @@ jobs:
           set -o pipefail 
           xcodebuild build \
             -scheme Volocal \
+            -allowProvisioningUpdates \
             -configuration Release \
             -sdk iphoneos
             | xcbeautify
@@ -56,6 +57,7 @@ jobs:
           xcodebuild \
             -scheme Volocal \
             -configuration Debug \
+            -allowProvisioningUpdates \
             -destination "platform=iOS Simulator,name=iPhone 17" \
             test
         env:
