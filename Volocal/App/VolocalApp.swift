@@ -33,6 +33,7 @@ struct VolocalApp: App {
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
+            pipeline.handleScenePhaseChange(newPhase)
             switch newPhase {
             case .active:
                 metrics.startMonitoring()

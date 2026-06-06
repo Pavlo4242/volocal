@@ -379,21 +379,6 @@ public final class VoicePipeline: ObservableObject {
     }
 }
 
-// MARK: - SentenceBuffer
-
-/// Accumulates streaming LLM tokens and emits complete sentences for TTS
- /*    func flush() -> String? {
-        let sentence = buffer.trimmingCharacters(in: .whitespaces)
-        buffer = ""
-        return sentence.isEmpty ? nil : sentence
-    }
-
-    func clear() {
-        buffer = ""
-    }
-}
- */
-
 extension PocketTtsManager {
     public func initialize() async throws {
         // Warm-up handled by SharedAudioEngine

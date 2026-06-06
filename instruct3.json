@@ -1,0 +1,42 @@
+{
+    "refactoring_instructions": {
+        "priority_level": "High",
+        "tasks": [
+            {
+                "id": "P0-01",
+                "objective": "Resolve VoicePipeline initialization errors",
+                "action": "Update VolocalApp.swift to instantiate VoicePipeline with required arguments: config, audioEngine, and memoryMonitor.",
+                "status": "Pending"
+            },
+            {
+                "id": "P0-02",
+                "objective": "API contract alignment",
+                "action": "Sync PipelineView with new PipelineState (include transcribing/error cases) and replace deprecated properties like isReady.",
+                "status": "Pending"
+            },
+            {
+                "id": "P0-03",
+                "objective": "Module dependency fix",
+                "action": "Correct LlamaContext.swift imports and ensure LlamaSwift is correctly mapped to the Llama module in project configuration.",
+                "status": "Pending"
+            },
+            {
+                "id": "P1-01",
+                "objective": "Missing Type Definition",
+                "action": "Create Models/ModelEntry.swift and define the ModelEntry struct used by the registry.",
+                "status": "Pending"
+            },
+            {
+                "id": "P1-02",
+                "objective": "SentenceBuffer API",
+                "action": "Update SentenceBuffer to ensure consistent return types (Void vs. callback) across the pipeline implementation.",
+                "status": "Pending"
+            }
+        ],
+        "verification_steps": [
+            "Verify Swift compiler success for all targets",
+            "Validate pipeline state transitions in Debug metrics",
+            "Confirm model registry entries are correctly resolved at runtime"
+        ]
+    }
+}
