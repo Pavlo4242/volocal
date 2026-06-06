@@ -31,6 +31,8 @@ targets:
     sources:
       - Volocal
     dependencies:
+      - package: llama.swift
+      - package: llama
       - package: FluidAudio
         product: FluidAudio
       - package: mlx-swift-lm
