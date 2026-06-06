@@ -100,8 +100,11 @@ struct PipelineView: View {
         switch pipeline.state {
         case .idle: return .blue
         case .listening: return .red
+        case .transcribing: return .orange
         case .processing: return .orange
+        case .thinking: return .purple
         case .speaking: return .green
+        case .error: return .gray
         }
     }
 
@@ -109,8 +112,11 @@ struct PipelineView: View {
         switch pipeline.state {
         case .idle: return "mic.fill"
         case .listening: return "mic.fill"
+        case .transcribing: return "brain"
         case .processing: return "brain"
+        case .thinking: return "brain.head.profile"
         case .speaking: return "speaker.wave.2.fill"
+        case .error: return "exclamationmark.triangle.fill"
         }
     }
 }

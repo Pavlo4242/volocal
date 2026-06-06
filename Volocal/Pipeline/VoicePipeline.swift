@@ -61,6 +61,7 @@ public final class VoicePipeline: ObservableObject {
 
     @Published public private(set) var state: PipelineState = .idle
     @Published public var loadingStatus: String?
+    @Published public var currentError: String?
     @Published public private(set) var conversation: [ConversationTurn] = []
     @Published public private(set) var partialTranscript: String = ""
     @Published public private(set) var partialResponse: String = ""
@@ -201,7 +202,7 @@ public final class VoicePipeline: ObservableObject {
     public func bargeIn() {
         currentTurnRevision += 1
         llmTask?.cancel()
-        ttsManager.stop()
+        Task { await ttsManager.stop() }
         sentenceBuffer.clear()
         partialResponse = ""
         state = .listening
@@ -355,4 +356,95 @@ public final class VoicePipeline: ObservableObject {
 
 extension PocketTtsManager {
     public func stop() {}
+}
+
+// MARK: - Minimal Type Stubs
+// Added to satisfy compiler errors due to missing modules/files in target.
+
+public struct ChatMessage: Equatable, Codable {
+    public enum Role: String, Codable { case system, user, assistant }
+    public let role: Role
+    public let content: String
+    public init(role: Role, content: String) { self.role = role; self.content = content }
+}
+
+public enum ASRLanguage: String {
+    case english = "en"
+    case thai = "th"
+}
+
+public struct ASRResult {
+    public let text: String
+    public let confidence: Float
+    public let isEndOfUtterance: Bool
+    public let timestamp: Date
+    public let providerName: String
+    public init(text: String, confidence: Float = 1.0, isEndOfUtterance: Bool = false, timestamp: Date = .now, providerName: String = "unknown") {
+        self.text = text; self.confidence = confidence; self.isEndOfUtterance = isEndOfUtterance; self.timestamp = timestamp; self.providerName = providerName
+    }
+}
+
+public protocol ASRProvider: AnyObject {
+    var name: String { get }
+    var supportedLanguages: [ASRLanguage] { get }
+    var isReady: Bool { get }
+    var estimatedMemoryMB: Int { get }
+    var onResult: ((ASRResult) -> Void)? { get set }
+    var onEndOfUtterance: (() -> Void)? { get set }
+    var onError: ((Error) -> Void)? { get set }
+    func prepare() async throws
+    func startStreaming(language: ASRLanguage) async throws
+    func appendAudioSamples(_ samples: [Float]) async throws
+    func stopStreaming() async throws
+    func unload() async
+}
+
+public struct LLMToken {
+    public let text: String
+    public let isLast: Bool
+    public init(text: String, isLast: Bool = false) { self.text = text; self.isLast = isLast }
+}
+
+public protocol LLMProvider: AnyObject {
+    var name: String { get }
+    var isReady: Bool { get }
+    var estimatedMemoryMB: Int { get }
+    var tokensPerSecond: Double { get }
+    var maxContextTokens: Int { get }
+    func prepare() async throws
+    func unload() async
+    func generate(messages: [ChatMessage], systemPrompt: String) -> AsyncThrowingStream<LLMToken, Error>
+    func cancelGeneration()
+    func trimmedMessages(_ messages: [ChatMessage]) -> [ChatMessage]
+}
+
+public enum LLMTier {
+    case lite, standard
+}
+
+public class MemoryPressureMonitor: ObservableObject {
+    public var onTierChange: ((LLMTier) -> Void)?
+    public var onCriticalPressure: (() -> Void)?
+    public init() {}
+}
+
+public enum LLMBackend: String {
+    case qwen0_8B
+    case qwen2B
+}
+
+public struct ModelConfiguration: Equatable {
+    public static var current = ModelConfiguration()
+    public var asrBackend: String
+    public var asrLanguage: ASRLanguage
+    public var llmBackend: LLMBackend
+    
+    public init(asrBackend: String = "whisper", asrLanguage: ASRLanguage = .english, llmBackend: LLMBackend = .qwen2B) {
+        self.asrBackend = asrBackend
+        self.asrLanguage = asrLanguage
+        self.llmBackend = llmBackend
+    }
+    
+    public func makeASRProvider() -> any ASRProvider { fatalError("Stub") }
+    public func makeLLMProvider() -> any LLMProvider { fatalError("Stub") }
 }
