@@ -34,7 +34,7 @@ targets:
       - package: FluidAudio
         product: FluidAudio
       - package: llama.swift
-        product: Llama
+        product: llama
       - package: WhisperKit       # NEW
         product: WhisperKit
     settings:
