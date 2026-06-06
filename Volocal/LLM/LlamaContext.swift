@@ -1,3 +1,4 @@
+#if canImport(LlamaSwift)
 import Foundation
 import LlamaSwift
 
@@ -233,3 +234,4 @@ enum LlamaContextError: LocalizedError {
         }
     }
 }
+#endif

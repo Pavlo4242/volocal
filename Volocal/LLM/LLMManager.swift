@@ -1,3 +1,4 @@
+#if canImport(LlamaSwift)
 import Foundation
 import os
 
@@ -111,3 +112,4 @@ final class LLMManager: ObservableObject {
         llamaContext != nil
     }
 }
+#endif
