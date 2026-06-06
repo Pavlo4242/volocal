@@ -16,11 +16,13 @@ struct VolocalApp: App {
                 ModelLoadingView()
                     .environmentObject(pipeline)
                     .task {
-                        pipeline.metrics = metrics
                         metrics.startMonitoring()
-                        await pipeline.configure(
-                            llmModelPath: modelManager.llmModelPath
-                        )
+                        do {
+                            try await pipeline.start()
+                            pipeline.isReady = true
+                        } catch {
+                            pipeline.currentError = error.localizedDescription
+                        }
                     }
             } else {
                 ContentView()

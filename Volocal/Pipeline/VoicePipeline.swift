@@ -33,6 +33,18 @@ public enum PipelineState: String, Equatable {
     case thinking           // LLM generating
     case speaking           // TTS outputting
     case error
+
+    public var label: String {
+        switch self {
+        case .idle: return "Ready"
+        case .listening: return "Listening..."
+        case .transcribing: return "Transcribing..."
+        case .processing: return "Processing..."
+        case .thinking: return "Thinking..."
+        case .speaking: return "Speaking..."
+        case .error: return "Error"
+        }
+    }
 }
 
 // MARK: - Conversation Turn
@@ -66,6 +78,7 @@ public final class VoicePipeline: ObservableObject {
     @Published public private(set) var partialTranscript: String = ""
     @Published public private(set) var partialResponse: String = ""
     @Published public private(set) var tokensPerSecond: Double = 0
+    @Published public var isReady: Bool = false
     @Published public private(set) var isLLMLoaded = false
 
     // MARK: Dependencies (protocol types only)
@@ -94,16 +107,14 @@ public final class VoicePipeline: ObservableObject {
 
     init(
         config: ModelConfiguration = .current,
-        audioEngine: SharedAudioEngine = SharedAudioEngine(),
-        memoryMonitor: MemoryPressureMonitor = MemoryPressureMonitor(),
         systemPrompt: String = """
         You are a helpful voice assistant. Respond concisely in 1–3 sentences.
         Match the language of the user's message.
         """
     ) {
         self.config = config
-        self.audioEngine = audioEngine
-        self.memoryMonitor = memoryMonitor
+        self.audioEngine = SharedAudioEngine()
+        self.memoryMonitor = MemoryPressureMonitor()
         self.systemPrompt = systemPrompt
 
         // Instantiate concrete providers from configuration
@@ -261,7 +272,7 @@ public final class VoicePipeline: ObservableObject {
 
             guard !Task.isCancelled, self.currentTurnRevision == revision else { return }
 
-            var assistantTurn = ConversationTurn(role: .assistant, content: "")
+            let assistantTurn = ConversationTurn(role: .assistant, content: "")
             self.conversation.append(assistantTurn)
             let assistantIdx = self.conversation.count - 1
 
