@@ -42,6 +42,8 @@ targets:
         product: MLXLMCommon
       - package: mlx-swift-lm
         product: MLXLLM
+      - package: mlx-swift-lm
+        product: MLXHuggingFace
       - package: WhisperKit       # NEW
         product: WhisperKit
     settings:

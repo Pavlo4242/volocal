@@ -4,6 +4,9 @@
 *.ort
 *.safetensors
 
+#scratch
+/scratch/
+
 # Xcode
 xcuserdata/
 DerivedData/
