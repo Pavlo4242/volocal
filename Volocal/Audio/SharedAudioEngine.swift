@@ -32,6 +32,8 @@ final class SharedAudioEngine: ObservableObject {
 
     let ttsFormat: AVAudioFormat
 
+    public var onAudioBuffer: (([Float]) -> Void)?
+
     init() {
         ttsFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,

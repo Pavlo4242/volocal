@@ -1,0 +1,46 @@
+{
+    "task": "Repair codebase to fix iOS build failures",
+    "context": "The iOS build is failing with several Swift compiler errors related to missing types, missing members, and incorrect SwiftUI bindings. Apply the minimum required changes to fix these specific errors without refactoring or adding unrequested helper functions.",
+    "fixes": [
+        {
+            "error_description": "Value of type 'VoicePipeline' has no dynamic member 'loadingStatus', and initializer 'init(_:)' requires that 'Binding<Subject>' conform to 'StringProtocol'.",
+            "target_code": "Text(pipeline.loadingStatus ?? \"Preparing...\")",
+            "instruction": "Verify the definition of `VoicePipeline`. Ensure that `loadingStatus` is declared as a published property (e.g., `@Published var loadingStatus: String?`) if `VoicePipeline` is an `ObservableObject`. Fix the SwiftUI `Text` view initialization to properly access the string value rather than a binding, ensuring it unwraps correctly."
+        },
+        {
+            "error_description": "Type 'PipelineState' has no member 'processing'.",
+            "target_code": "case .processing: return .orange\n// and \ncase .processing: return \"brain\"",
+            "instruction": "Locate the `PipelineState` enum definition and add the missing `processing` case. Change ONLY this enum definition to satisfy the exhaustive switch statements."
+        },
+        {
+            "error_description": "Cannot find type 'ChatMessage' in scope.",
+            "target_code": "public let role: ChatMessage.Role\npublic init(role: ChatMessage.Role, content: String, asrProvider: String? = nil)",
+            "instruction": "Locate the file containing these lines. Determine if `ChatMessage` is defined in another module that needs to be imported, or define the missing `ChatMessage` type and its `Role` enum."
+        },
+        {
+            "error_description": "Cannot find type 'ASRProvider' in scope.",
+            "target_code": "private var asrProvider: any ASRProvider",
+            "instruction": "Locate the file using `ASRProvider`. Add the missing `import` statement if `ASRProvider` belongs to a different target, or define the `ASRProvider` protocol."
+        },
+        {
+            "error_description": "Cannot find types 'LLMProvider', 'MemoryPressureMonitor', 'ModelConfiguration', and 'LLMBackend' in scope.",
+            "target_code": "private var llmProvider: any LLMProvider\nprivate let memoryMonitor: MemoryPressureMonitor\nprivate var config: ModelConfiguration\nlet newLLMBackend: LLMBackend = newTier == .lite ? .qwen0_8B : .qwen2B",
+            "instruction": "Add the necessary `import` statements for the modules defining `LLMProvider`, `MemoryPressureMonitor`, `ModelConfiguration`, and `LLMBackend`. If they do not exist, create their definitions/protocols with the minimum properties required (such as `LLMBackend` enum with `.qwen0_8B` and `.qwen2B` cases)."
+        },
+        {
+            "error_description": "Extra argument 'language' in call and value of type 'PocketTtsManager' has no member 'stop'.",
+            "target_code": "self.ttsManager = PocketTtsManager(language: .english)\nttsManager.stop()",
+            "instruction": "Update `PocketTtsManager` to either accept the `language` argument in its initializer (or remove the argument from the call site if it's no longer supported). Add a `stop()` method to the `PocketTtsManager` class/struct."
+        },
+        {
+            "error_description": "Value of type 'SharedAudioEngine' has no member 'onAudioBuffer'.",
+            "target_code": "audioEngine.onAudioBuffer = { [weak self] samples in",
+            "instruction": "Add a public `onAudioBuffer` closure property to the `SharedAudioEngine` class definition, matching the expected signature (e.g., `var onAudioBuffer: (([Float]) -> Void)?`)."
+        },
+        {
+            "error_description": "Value of type 'SentenceBuffer' has no member 'clear'.",
+            "target_code": "sentenceBuffer.clear()",
+            "instruction": "Add a `clear()` method to the `SentenceBuffer` class/struct that resets its internal state."
+        }
+    ]
+}

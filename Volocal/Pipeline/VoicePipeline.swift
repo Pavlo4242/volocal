@@ -29,6 +29,7 @@ public enum PipelineState: String, Equatable {
     case idle
     case listening          // ASR active, waiting for speech
     case transcribing       // ASR processing
+    case processing
     case thinking           // LLM generating
     case speaking           // TTS outputting
     case error
@@ -59,6 +60,7 @@ public final class VoicePipeline: ObservableObject {
     // MARK: Published UI State
 
     @Published public private(set) var state: PipelineState = .idle
+    @Published public var loadingStatus: String?
     @Published public private(set) var conversation: [ConversationTurn] = []
     @Published public private(set) var partialTranscript: String = ""
     @Published public private(set) var partialResponse: String = ""
@@ -106,7 +108,7 @@ public final class VoicePipeline: ObservableObject {
         // Instantiate concrete providers from configuration
         self.asrProvider = config.makeASRProvider()
         self.llmProvider = config.makeLLMProvider()
-        self.ttsManager = PocketTtsManager(language: .english)
+        self.ttsManager = PocketTtsManager()
 
         bindMemoryMonitor()
     }
@@ -350,3 +352,7 @@ public final class VoicePipeline: ObservableObject {
     }
 }
  */
+
+extension PocketTtsManager {
+    public func stop() {}
+}

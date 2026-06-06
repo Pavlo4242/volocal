@@ -54,6 +54,11 @@ final class SentenceBuffer {
         buffer = ""
     }
 
+    /// Clear the buffer (alias for reset)
+    func clear() {
+        reset()
+    }
+
     // MARK: - Private
 
     private func findSentenceBoundary() -> Range<String.Index>? {
