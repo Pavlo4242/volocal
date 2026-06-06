@@ -165,12 +165,12 @@ public struct ModelConfiguration: Codable, Equatable {
 
     private static let udKey = "volocal.modelConfiguration"
 
-    public static var current: ModelConfiguration {
+public static var current: ModelConfiguration {
         get {
             guard
                 let data = UserDefaults.standard.data(forKey: udKey),
                 let config = try? JSONDecoder().decode(ModelConfiguration.self, from: data)
-            else { return .default }
+            else { return .thai }
             return config
         }
         set {

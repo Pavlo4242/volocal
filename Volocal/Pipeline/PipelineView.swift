@@ -88,8 +88,24 @@ struct PipelineView: View {
                 }
                 .padding(.vertical, 20)
             }
-            .navigationTitle("Volocal")
+.navigationTitle("Volocal")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button("Thai to English (Whisper)") {
+                            Task {
+                                try? await pipeline.reconfigure(with: .thai)
+                            }
+                        }
+                        Button("English Chat (Parakeet)") {
+                            Task {
+                                try? await pipeline.reconfigure(with: .default)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "gear")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         pipeline.resetChat()

@@ -116,10 +116,10 @@ final class SharedAudioEngine: ObservableObject {
                 logger.warning("Voice processing not available: \(error.localizedDescription)")
             }
 
-            // Install tap — format: nil lets VP set the correct format.
+// Install tap — format: nil lets VP set the correct format.
             // Engine is stopped so the graph can be modified safely.
             let audioBridge = self.bridge
-            inputNode.installTap(onBus: 0, bufferSize: 4096, format: nil) { buffer, _ in
+            inputNode.installTap(onBus: 0, bufferSize: 4096, format: nil) { [weak self] buffer, _ in
                 // No speaking gate — VP handles echo cancellation.
                 // Mic stays active during TTS for barge-in (voice interruption).
 
@@ -136,6 +136,13 @@ final class SharedAudioEngine: ObservableObject {
                 }
 
                 audioBridge.inputContinuation?.yield(copy)
+                
+                if let floatData = copy.floatChannelData?[0] {
+                    let samples = Array(UnsafeBufferPointer(start: floatData, count: Int(copy.frameLength)))
+                    Task { @MainActor in
+                        self?.onAudioBuffer?(samples)
+                    }
+                }
             }
 
             // Restart engine with VP + tap configured

@@ -99,23 +99,31 @@ public final class VoicePipeline: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var llmLoadTask: Task<Void, Never>?
 
-    // MARK: System Prompt
+   // MARK: System Prompt
 
-    private let systemPrompt: String
+    private var systemPrompt: String
 
     // MARK: Init
 
     init(
-        config: ModelConfiguration = .current,
-        systemPrompt: String = """
-        You are a helpful voice assistant. Respond concisely in 1–3 sentences.
-        Match the language of the user's message.
-        """
+        config: ModelConfiguration = .current
     ) {
         self.config = config
         self.audioEngine = SharedAudioEngine()
         self.memoryMonitor = MemoryPressureMonitor()
-        self.systemPrompt = systemPrompt
+
+        if config.asrLanguage == .thai {
+            self.systemPrompt = """
+            You are a real-time translator. The user will speak to you in Thai.
+            Translate their speech into natural-sounding English.
+            Respond ONLY with the English translation. Do not add any conversational filler or explanations.
+            """
+        } else {
+            self.systemPrompt = """
+            You are a helpful voice assistant. Respond concisely in 1–3 sentences.
+            Match the language of the user's message.
+            """
+        }
 
         // Instantiate concrete providers from configuration
         self.asrProvider = config.makeASRProvider()
@@ -150,6 +158,7 @@ public final class VoicePipeline: ObservableObject {
             }
         }
         audioEngine.start()
+        audioEngine.beginInputCapture()
 
         // 4. Begin ASR (lazy LLM load below)
         try await asrProvider.startStreaming(language: config.asrLanguage)
@@ -179,10 +188,23 @@ public final class VoicePipeline: ObservableObject {
         await llmProvider.unload()
         isLLMLoaded = false
 
-        // Rebuild
+// Rebuild
         config = newConfig
         asrProvider = newConfig.makeASRProvider()
         llmProvider = newConfig.makeLLMProvider()
+
+        if newConfig.asrLanguage == .thai {
+            systemPrompt = """
+            You are a real-time translator. The user will speak to you in Thai.
+            Translate their speech into natural-sounding English.
+            Respond ONLY with the English translation. Do not add any conversational filler or explanations.
+            """
+        } else {
+            systemPrompt = """
+            You are a helpful voice assistant. Respond concisely in 1–3 sentences.
+            Match the language of the user's message.
+            """
+        }
 
         try await asrProvider.prepare()
         wireASRCallbacks()
@@ -373,131 +395,16 @@ public final class VoicePipeline: ObservableObject {
  */
 
 extension PocketTtsManager {
-    public func stop() {}
-    public func synthesize(text: String) async throws -> [Float] { return [] }
-    public func initialize() async throws {}
-}
-
-// MARK: - Minimal Type Stubs
-// Added to satisfy compiler errors due to missing modules/files in target.
-
-public struct ChatMessage: Equatable, Codable {
-    public enum Role: String, Codable { case system, user, assistant }
-    public let role: Role
-    public let content: String
-    public init(role: Role, content: String) { self.role = role; self.content = content }
-}
-
-public enum ASRLanguage: String {
-    case english = "en"
-    case thai = "th"
-}
-
-public struct ASRResult {
-    public let text: String
-    public let confidence: Float
-    public let isEndOfUtterance: Bool
-    public let timestamp: Date
-    public let providerName: String
-    public init(text: String, confidence: Float = 1.0, isEndOfUtterance: Bool = false, timestamp: Date = .now, providerName: String = "unknown") {
-        self.text = text; self.confidence = confidence; self.isEndOfUtterance = isEndOfUtterance; self.timestamp = timestamp; self.providerName = providerName
+    public func stop() {
+        // Handled directly by SharedAudioEngine
     }
-}
-
-public protocol ASRProvider: AnyObject {
-    var name: String { get }
-    var supportedLanguages: [ASRLanguage] { get }
-    var isReady: Bool { get }
-    var estimatedMemoryMB: Int { get }
-    var onResult: ((ASRResult) -> Void)? { get set }
-    var onEndOfUtterance: (() -> Void)? { get set }
-    var onError: ((Error) -> Void)? { get set }
-    func prepare() async throws
-    func startStreaming(language: ASRLanguage) async throws
-    func appendAudioSamples(_ samples: [Float]) async throws
-    func stopStreaming() async throws
-    func unload() async
-}
-
-public struct LLMToken {
-    public let text: String
-    public let isLast: Bool
-    public init(text: String, isLast: Bool = false) { self.text = text; self.isLast = isLast }
-}
-
-public protocol LLMProvider: AnyObject {
-    var name: String { get }
-    var isReady: Bool { get }
-    var estimatedMemoryMB: Int { get }
-    var tokensPerSecond: Double { get }
-    var maxContextTokens: Int { get }
-    func prepare() async throws
-    func unload() async
-    func generate(messages: [ChatMessage], systemPrompt: String) -> AsyncThrowingStream<LLMToken, Error>
-    func cancelGeneration()
-    func trimmedMessages(_ messages: [ChatMessage]) -> [ChatMessage]
-}
-
-public enum LLMTier {
-    case lite, standard
-}
-
-public class MemoryPressureMonitor: ObservableObject {
-    public var onTierChange: ((LLMTier) -> Void)?
-    public var onCriticalPressure: (() -> Void)?
-    public init() {}
-}
-
-public enum LLMBackend: String {
-    case qwen0_8B
-    case qwen2B
-}
-
-public class DummyASRProvider: ASRProvider {
-    public var name = "Dummy ASR"
-    public var supportedLanguages: [ASRLanguage] = [.english]
-    public var isReady = true
-    public var estimatedMemoryMB = 0
-    public var onResult: ((ASRResult) -> Void)?
-    public var onEndOfUtterance: (() -> Void)?
-    public var onError: ((Error) -> Void)?
-    public func prepare() async throws {}
-    public func startStreaming(language: ASRLanguage) async throws {}
-    public func appendAudioSamples(_ samples: [Float]) async throws {}
-    public func stopStreaming() async throws {}
-    public func unload() async {}
-}
-
-public class DummyLLMProvider: LLMProvider {
-    public var name = "Dummy LLM"
-    public var isReady = true
-    public var estimatedMemoryMB = 0
-    public var tokensPerSecond: Double = 0
-    public var maxContextTokens = 1024
-    public func prepare() async throws {}
-    public func unload() async {}
-    public func generate(messages: [ChatMessage], systemPrompt: String) -> AsyncThrowingStream<LLMToken, Error> {
-        AsyncThrowingStream { continuation in
-            continuation.yield(LLMToken(text: "This is a dummy response since the LLM provider is not yet fully linked in the project.", isLast: true))
-            continuation.finish()
+    
+    public func synthesize(text: String) async throws -> [Float] {
+        var allSamples: [Float] = []
+        let stream = try await self.synthesizeStreaming(text: text, voice: "alba", temperature: 0.4)
+        for try await frame in stream {
+            allSamples.append(contentsOf: frame.samples)
         }
+        return allSamples
     }
-    public func cancelGeneration() {}
-    public func trimmedMessages(_ messages: [ChatMessage]) -> [ChatMessage] { return messages }
-}
-
-public struct ModelConfiguration: Equatable {
-    public static var current = ModelConfiguration()
-    public var asrBackend: String
-    public var asrLanguage: ASRLanguage
-    public var llmBackend: LLMBackend
-    
-    public init(asrBackend: String = "whisper", asrLanguage: ASRLanguage = .english, llmBackend: LLMBackend = .qwen2B) {
-        self.asrBackend = asrBackend
-        self.asrLanguage = asrLanguage
-        self.llmBackend = llmBackend
-    }
-    
-    public func makeASRProvider() -> any ASRProvider { return DummyASRProvider() }
-    public func makeLLMProvider() -> any LLMProvider { return DummyLLMProvider() }
 }
