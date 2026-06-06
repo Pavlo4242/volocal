@@ -453,6 +453,39 @@ public enum LLMBackend: String {
     case qwen2B
 }
 
+public class DummyASRProvider: ASRProvider {
+    public var name = "Dummy ASR"
+    public var supportedLanguages: [ASRLanguage] = [.english]
+    public var isReady = true
+    public var estimatedMemoryMB = 0
+    public var onResult: ((ASRResult) -> Void)?
+    public var onEndOfUtterance: (() -> Void)?
+    public var onError: ((Error) -> Void)?
+    public func prepare() async throws {}
+    public func startStreaming(language: ASRLanguage) async throws {}
+    public func appendAudioSamples(_ samples: [Float]) async throws {}
+    public func stopStreaming() async throws {}
+    public func unload() async {}
+}
+
+public class DummyLLMProvider: LLMProvider {
+    public var name = "Dummy LLM"
+    public var isReady = true
+    public var estimatedMemoryMB = 0
+    public var tokensPerSecond: Double = 0
+    public var maxContextTokens = 1024
+    public func prepare() async throws {}
+    public func unload() async {}
+    public func generate(messages: [ChatMessage], systemPrompt: String) -> AsyncThrowingStream<LLMToken, Error> {
+        AsyncThrowingStream { continuation in
+            continuation.yield(LLMToken(text: "This is a dummy response since the LLM provider is not yet fully linked in the project.", isLast: true))
+            continuation.finish()
+        }
+    }
+    public func cancelGeneration() {}
+    public func trimmedMessages(_ messages: [ChatMessage]) -> [ChatMessage] { return messages }
+}
+
 public struct ModelConfiguration: Equatable {
     public static var current = ModelConfiguration()
     public var asrBackend: String
@@ -465,6 +498,6 @@ public struct ModelConfiguration: Equatable {
         self.llmBackend = llmBackend
     }
     
-    public func makeASRProvider() -> any ASRProvider { fatalError("Stub") }
-    public func makeLLMProvider() -> any LLMProvider { fatalError("Stub") }
+    public func makeASRProvider() -> any ASRProvider { return DummyASRProvider() }
+    public func makeLLMProvider() -> any LLMProvider { return DummyLLMProvider() }
 }
