@@ -13,7 +13,10 @@
 
 import Foundation
 import UIKit
-import os.proc
+
+// Private Apple API to get available memory footprint
+@_silgen_name("os_proc_available_memory")
+private func os_proc_available_memory() -> Int
 
 // MARK: - Memory Tier
 
