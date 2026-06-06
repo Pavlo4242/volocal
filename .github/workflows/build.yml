@@ -64,6 +64,12 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+    
+        
+
       - name: Generate Xcode project
         run: xcodegen generate
 

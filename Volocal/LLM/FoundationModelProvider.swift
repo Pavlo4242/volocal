@@ -1,19 +1,5 @@
 // Volocal/LLM/FoundationModelProvider.swift
 // Apple Foundation Models adapter — zero-GGUF LLM path for iOS 26+.
-//
-// WHY THIS EXISTS:
-//   Apple Intelligence (iOS 26) ships ~3B parameter on-device models
-//   accessed through the FoundationModels framework.  No GGUF download,
-//   no Metal GPU contention — inference runs through the system daemon
-//   on dedicated Silicon paths.
-//
-//   This provider replaces LlamaLLMProvider entirely when available,
-//   saving ~1.26 GB of download and eliminating GPU/LLM competition.
-//
-// STATUS:  Guarded by @available(iOS 26, *).
-//   On iOS 17-25, the pipeline falls back to LlamaLLMProvider automatically.
-//   Stub out the body if FoundationModels isn't in your SDK yet;
-//   the availability guard prevents compilation issues on earlier toolchains.
 
 import Foundation
 
@@ -43,7 +29,7 @@ public final class FoundationModelProvider: LLMProvider {
     /// Returns true when Foundation Models are available and eligible on this device.
     public static var isSupported: Bool {
         #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
+        if #available(iOS 26, macOS 15, *) {
             return SystemLanguageModel.default.isAvailable
         }
         #endif
@@ -54,19 +40,18 @@ public final class FoundationModelProvider: LLMProvider {
 
     public func prepare() async throws {
         #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
+        if #available(iOS 26, macOS 15, *) {
             // FoundationModels loads lazily — just mark ready.
             isReady = true
             return
         }
         #endif
-        // Should not reach here if isSupported was checked first.
         isReady = false
     }
 
     public func unload() async {
         #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
+        if #available(iOS 26, macOS 15, *) {
             session = nil
         }
         #endif
@@ -82,39 +67,52 @@ public final class FoundationModelProvider: LLMProvider {
 
         AsyncThrowingStream { continuation in
             #if canImport(FoundationModels)
-            if #available(iOS 26, *) {
+            if #available(iOS 26, macOS 15, *) {
                 Task {
                     do {
-                        // Build a FoundationModels prompt from ChatMessage history
-                        var instructions = Instructions(systemPrompt)
+                        // 1. Build a FoundationModels session
+                        let instructions = Instructions(systemPrompt)
                         var transcript = Transcript()
-                        for msg in self.trimmedMessages(messages) {
+                        
+                        let trimmed = self.trimmedMessages(messages)
+                        
+                        // Drop the last user message to avoid duplicating it in the transcript context
+                        let history = trimmed.dropLast()
+                        
+                        for msg in history {
                             switch msg.role {
                             case .user:
                                 transcript.append(.prompt(msg.content))
                             case .assistant:
                                 transcript.append(.response(msg.content))
                             case .system:
-                                break  // handled above
+                                break  // handled entirely by Instructions
                             }
                         }
 
-                        let model = SystemLanguageModel.default
                         let newSession = LanguageModelSession(
-                            model: model,
                             instructions: instructions,
                             transcript: transcript
                         )
                         self.session = newSession
 
-                        let lastUser = messages.last(where: { $0.role == .user })?.content ?? ""
+                        let lastUser = trimmed.last(where: { $0.role == .user })?.content ?? ""
                         let startTime = Date()
                         var nTokens = 0
+                        var previousLength = 0
 
-                        for try await partialResponse in newSession.streamResponse(to: lastUser) {
+                        // 2. Stream snapshots and convert to deltas
+                        // Foundation Models stream the full string snapshot on every yield.
+                        // Volocal's VoicePipeline expects string deltas, so we must calculate the diff.
+                        for try await snapshot in newSession.streamResponse(to: lastUser) {
                             guard !self.isCancelled else { break }
+                            
+                            let currentText = String(describing: snapshot)
+                            let delta = String(currentText.dropFirst(previousLength))
+                            previousLength = currentText.count
+                            
                             nTokens += 1
-                            continuation.yield(LLMToken(text: partialResponse, isLast: false))
+                            continuation.yield(LLMToken(text: delta, isLast: false))
                         }
 
                         let elapsed = Date().timeIntervalSince(startTime)
@@ -137,11 +135,8 @@ public final class FoundationModelProvider: LLMProvider {
 
     public func cancelGeneration() {
         isCancelled = true
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            session?.cancel()
-        }
-        #endif
+        // The session object does not have a public cancel method in the current API,
+        // so we handle it gracefully via the isCancelled boolean guard in the stream loop.
     }
 }
 
@@ -151,6 +146,6 @@ enum FoundationModelError: LocalizedError {
     case unavailable
 
     var errorDescription: String? {
-        "Apple Foundation Models require iOS 26+ and Apple Intelligence eligibility."
+        "Apple Foundation Models require iOS 26+ / macOS 15+ and Apple Intelligence eligibility."
     }
 }
