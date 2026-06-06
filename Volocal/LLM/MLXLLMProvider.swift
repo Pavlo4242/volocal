@@ -2,12 +2,12 @@
 // MLX Swift adapter — hardware-accelerated LLM on Apple Silicon.
 //
 // Uses mlx-swift-lm (MLXLMCommon + MLXLLM) for tokenization, generation,
-// and streaming detokenization without writing custom loops.
+// and streaming detokenization.
 
 import Foundation
 import MLXLMCommon
 import MLXLLM
-import Combine
+import MLXHuggingFace
 
 public final class MLXLLMProvider: LLMProvider {
 
@@ -38,15 +38,22 @@ public final class MLXLLMProvider: LLMProvider {
     public func prepare() async throws {
         guard !isReady else { return }
 
-        // Load model from a HuggingFace hub identifier via MLXLLM.
-        // ModelContainer handles download, caching, and compilation.
+        // Use the MLXLMCommon free function to load a model container.
+        // The hub ID references a pre-quantized MLX model on HuggingFace.
         let hubID = tier == .standard
             ? "mlx-community/Qwen1.5-1.8B-Chat-4bit"
             : "mlx-community/Qwen1.5-0.5B-Chat-4bit"
 
-        let configuration = ModelConfiguration.init(id: hubID)
-        modelContainer = try await LLMModelFactory.shared.loadContainer(
-            configuration: configuration
+        // Create an MLXLMCommon.ModelConfiguration (fully qualified to avoid
+        // collision with Volocal's own ModelConfiguration struct).
+        let mlxConfig = MLXLMCommon.ModelConfiguration(id: hubID)
+
+        // loadModelContainer is a free function in MLXLMCommon that:
+        //   1. Resolves the model via the HubApi downloader
+        //   2. Loads weights + tokenizer
+        //   3. Returns a thread-safe ModelContainer actor
+        modelContainer = try await #huggingFaceLoadModelContainer(
+            configuration: mlxConfig
         )
 
         isReady = true
@@ -75,15 +82,16 @@ public final class MLXLLMProvider: LLMProvider {
                 }
 
                 do {
-                    // Build prompt from messages
                     let prompt = self.buildPrompt(systemPrompt: systemPrompt, messages: messages)
                     let startTime = Date()
                     var tokenCount = 0
 
-                    // Use the container's generate method
-                    let result = try await container.perform { context in
-                        let input = try await context.processor.prepare(input: .init(prompt: prompt))
-                        var fullText = ""
+                    // ModelContainer.perform gives us exclusive access to the
+                    // non-Sendable ModelContext inside the actor.
+                    let _ = try await container.perform { context in
+                        let input = try await context.processor.prepare(
+                            input: .init(prompt: prompt)
+                        )
 
                         return try MLXLMCommon.generate(
                             input: input,
@@ -93,9 +101,12 @@ public final class MLXLLMProvider: LLMProvider {
                             guard !Task.isCancelled, !self.isCancelled else { return .stop }
 
                             tokenCount += 1
-                            let newText = context.tokenizer.decode(tokens: tokens)
-                            let delta = String(newText.dropFirst(fullText.count))
-                            fullText = newText
+                            let newText = context.tokenizer.decode(tokenIds: tokens)
+                            // newText is the full decoded string so far; we need the delta.
+                            // But generate() gives us the full token array each call, so
+                            // decode just the latest token for the delta.
+                            let latestToken = [tokens.last].compactMap { $0 }
+                            let delta = context.tokenizer.decode(tokenIds: latestToken)
 
                             if !delta.isEmpty {
                                 continuation.yield(LLMToken(text: delta, isLast: false))

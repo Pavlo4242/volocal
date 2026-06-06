@@ -62,6 +62,10 @@ public final class ParakeetASRProvider: ASRProvider {
     // Accumulates partial text between EOU events
     private var partialBuffer = ""
     private var isStreaming = false
+    private var updatesTask: Task<Void, Never>?
+
+    // A cached format for AVAudioPCMBuffer creation
+    private let audioFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false)!
 
     // MARK: Init
 
@@ -78,10 +82,7 @@ public final class ParakeetASRProvider: ASRProvider {
             // Download (or load from cache) the Parakeet EOU 120M CoreML bundle.
             // This is the same model fikrikarim/volocal uses — no change here.
             let models = try await AsrModels.downloadAndLoad(model: .parakeetEou)
-            let config = SlidingWindowConfig(
-                chunkSizeMs: chunkSizeMs,
-                networkDisabled: false   // set true for air-gapped; model is already local
-            )
+            let config = SlidingWindowAsrConfig.default // FluidAudio's config wrapper
             let manager = SlidingWindowAsrManager(config: config)
             try await manager.loadModels(models)
 
@@ -94,6 +95,10 @@ public final class ParakeetASRProvider: ASRProvider {
     }
 
     public func unload() async {
+        updatesTask?.cancel()
+        if let manager = asrManager {
+            await manager.cleanup()
+        }
         asrManager = nil
         asrModels = nil
         isReady = false
@@ -113,42 +118,59 @@ public final class ParakeetASRProvider: ASRProvider {
         partialBuffer = ""
         isStreaming = true
 
-        // Wire result callbacks from FluidAudio → our protocol callbacks.
-        manager.onPartialResult = { [weak self] result in
-            guard let self else { return }
-            let asrResult = ASRResult(
-                text: result.text,
-                confidence: result.confidence ?? 1.0,
-                isEndOfUtterance: false,
-                providerName: self.name
-            )
-            DispatchQueue.main.async { self.onResult?(asrResult) }
-        }
+        do {
+            try await manager.startStreaming()
+            
+            // Start listening to the updates stream
+            updatesTask = Task { [weak self] in
+                for await update in await manager.transcriptionUpdates {
+                    guard let self else { return }
+                    // Reconstruct the full string since the stream returns diffs or current state
+                    let confirmed = await manager.confirmedTranscript
+                    let volatile = await manager.volatileTranscript
+                    
+                    let combined = [confirmed, volatile]
+                        .filter { !$0.isEmpty }
+                        .joined(separator: " ")
 
-        manager.onEndOfUtterance = { [weak self] result in
-            guard let self else { return }
-            let asrResult = ASRResult(
-                text: result.text,
-                confidence: result.confidence ?? 1.0,
-                isEndOfUtterance: true,
-                providerName: self.name
-            )
-            DispatchQueue.main.async {
-                self.onResult?(asrResult)
-                self.onEndOfUtterance?()
+                    let isEOU = combined.hasSuffix(".") || combined.hasSuffix("?") || combined.hasSuffix("!")
+                    
+                    let asrResult = ASRResult(
+                        text: combined,
+                        confidence: update.confidence,
+                        isEndOfUtterance: isEOU,
+                        providerName: self.name
+                    )
+                    
+                    await MainActor.run {
+                        self.onResult?(asrResult)
+                        if isEOU {
+                            self.onEndOfUtterance?()
+                        }
+                    }
+                }
             }
+        } catch {
+            throw ParakeetASRError.streamingFailed(underlying: error)
         }
-
-        try await manager.startStreaming()
     }
 
     public func appendAudioSamples(_ samples: [Float]) async throws {
         guard isStreaming, let manager = asrManager else { return }
-        do {
-            try await manager.appendAudioSamples(samples)
-        } catch {
-            throw ParakeetASRError.streamingFailed(underlying: error)
+        
+        let frameCapacity = AVAudioFrameCount(samples.count)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: frameCapacity) else { return }
+        
+        buffer.frameLength = frameCapacity
+        if let channelData = buffer.floatChannelData?[0] {
+            samples.withUnsafeBufferPointer { ptr in
+                if let baseAddress = ptr.baseAddress {
+                    channelData.update(from: baseAddress, count: samples.count)
+                }
+            }
         }
+        
+        await manager.streamAudio(buffer)
     }
 
     public func flush() async {
@@ -158,6 +180,7 @@ public final class ParakeetASRProvider: ASRProvider {
     public func stopStreaming() async throws {
         guard isStreaming, let manager = asrManager else { return }
         isStreaming = false
-        try await manager.stopStreaming()
+        updatesTask?.cancel()
+        _ = try? await manager.finish()
     }
 }

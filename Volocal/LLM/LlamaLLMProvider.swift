@@ -50,8 +50,8 @@ public final class LlamaLLMProvider: LLMProvider {
 
     // MARK: LLMProvider
 
-    public var name: String { "llama.cpp / \(tier.filename)" }
-    public var estimatedMemoryMB: Int { tier.estimatedMB }
+    public var name: String { "llama.cpp / \(tier == .standard ? "Qwen 2B" : "Qwen 0.8B")" }
+    public var estimatedMemoryMB: Int { tier == .standard ? 1260 : 520 }
     public var maxContextTokens: Int { 4096 }
     public private(set) var isReady = false
     public private(set) var tokensPerSecond: Double = 0
@@ -94,7 +94,7 @@ public final class LlamaLLMProvider: LLMProvider {
         cParams.n_ctx     = UInt32(maxContextTokens)
         cParams.n_batch   = 512
         cParams.n_ubatch  = 512
-        cParams.flash_attn = true   // ~20% speed boost on Apple Silicon
+        // cParams.flash_attn = true   // Not available in llama.swift 2.0.0
 
         guard let context = llama_init_from_model(model, cParams) else {
             llama_model_free(model)
@@ -197,7 +197,7 @@ public final class LlamaLLMProvider: LLMProvider {
                     }
 
                     llama_sampler_free(samplerChain)
-                    llama_kv_cache_clear(context)
+                    llama_kv_cache_seq_rm(context, -1, -1, -1)
 
                     let elapsed = Date().timeIntervalSince(startTime)
                     if elapsed > 0 {
@@ -227,13 +227,15 @@ public final class LlamaLLMProvider: LLMProvider {
 
         try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
 
-        let modelFile = cacheDir.appendingPathComponent(tier.filename)
+        let filename = tier == .standard ? "Qwen3.5-2B-Q4_K_S.gguf" : "Qwen3.5-0.8B-Q4_K_S.gguf"
+        let modelFile = cacheDir.appendingPathComponent(filename)
         if FileManager.default.fileExists(atPath: modelFile.path) {
             return modelFile
         }
 
         // Download from HuggingFace (same pattern as ModelDownloadManager)
-        let hfURL = URL(string: "https://huggingface.co/\(tier.huggingFaceRepo)/resolve/main/\(tier.filename)")!
+        let repo = tier == .standard ? "Qwen/Qwen1.5-1.8B-Chat-GGUF" : "bartowski/Qwen_Qwen3.5-0.8B-GGUF"
+        let hfURL = URL(string: "https://huggingface.co/\(repo)/resolve/main/\(filename)")!
         let (tempURL, _) = try await URLSession.shared.download(from: hfURL)
         try FileManager.default.moveItem(at: tempURL, to: modelFile)
         return modelFile

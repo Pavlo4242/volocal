@@ -102,7 +102,7 @@ public final class MemoryPressureMonitor: ObservableObject {
         pollingTask = Task.detached(priority: .utility) { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(10))
-                let availableMB = Self.queryAvailableMemoryMB()
+                let availableMB = await Self.queryAvailableMemoryMB()
                 await MainActor.run { [weak self] in
                     self?.update(availableMB: availableMB)
                 }
