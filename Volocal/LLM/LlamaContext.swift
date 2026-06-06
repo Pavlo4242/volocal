@@ -27,8 +27,8 @@ private func llama_batch_add(
 
 // MARK: - LlamaContext Actor
 
-/// Thread-safe actor wrapping the llama.cpp C API for on-device LLM inference.
-/// Based on the official llama.cpp SwiftUI example (LibLlama.swift).
+// Thread-safe actor wrapping the llama.cpp C API for on-device LLM inference.
+// Based on the official llama.cpp SwiftUI example (LibLlama.swift).
 actor LlamaContext {
     private var model: OpaquePointer
     private var context: OpaquePointer
@@ -62,7 +62,7 @@ actor LlamaContext {
         }
     }
 
-    /// Create a new LlamaContext by loading a GGUF model file.
+    // Create a new LlamaContext by loading a GGUF model file.
     static func create(path: String, contextSize: UInt32 = 2048) throws -> LlamaContext {
         retainBackend()
 
@@ -70,7 +70,8 @@ actor LlamaContext {
         #if targetEnvironment(simulator)
         modelParams.n_gpu_layers = 0
         #else
-        modelParams.n_gpu_layers = 99 // Offload all layers to Metal GPU
+        // Offload all layers to Metal GPU
+        modelParams.n_gpu_layers = 99
         #endif
 
         guard let model = llama_model_load_from_file(path, modelParams) else {
@@ -102,7 +103,9 @@ actor LlamaContext {
         // Set up sampler chain per Qwen3.5 recommended non-thinking params
         let sparams = llama_sampler_chain_default_params()
         self.sampling = llama_sampler_chain_init(sparams)!
-        llama_sampler_chain_add(self.sampling, llama_sampler_init_penalties(0, 0, 0, 2.0))  // presence_penalty=2.0
+        
+        // presence_penalty=2.0
+        llama_sampler_chain_add(self.sampling, llama_sampler_init_penalties(0, 0, 0, 2.0))
         llama_sampler_chain_add(self.sampling, llama_sampler_init_top_k(20))
         llama_sampler_chain_add(self.sampling, llama_sampler_init_top_p(1.0, 1))
         llama_sampler_chain_add(self.sampling, llama_sampler_init_min_p(0.0, 1))
@@ -118,7 +121,7 @@ actor LlamaContext {
         LlamaContext.releaseBackend()
     }
 
-    /// Tokenize and evaluate the prompt, preparing for token generation.
+    // Tokenize and evaluate the prompt, preparing for token generation.
     func completionInit(text: String) throws {
         let utf8 = text.utf8CString
 
@@ -158,7 +161,7 @@ actor LlamaContext {
         isDone = false
     }
 
-    /// Generate the next token. Returns the decoded text, or nil if generation is complete.
+    // Generate the next token. Returns the decoded text, or nil if generation is complete.
     func completionLoop() -> String? {
         guard !isDone else { return nil }
 
@@ -197,12 +200,12 @@ actor LlamaContext {
         return text
     }
 
-    /// Check if generation is complete.
+    // Check if generation is complete.
     var generationDone: Bool {
         isDone
     }
 
-    /// Clear the context for a new conversation turn.
+    // Clear the context for a new conversation turn.
     func clear() {
         if let memory = llama_get_memory(context) {
             llama_memory_clear(memory, false)

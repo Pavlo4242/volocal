@@ -4,7 +4,7 @@ import os
 
 private let logger = Logger(subsystem: "com.volocal.app", category: "llm")
 
-/// Manages LLM inference using llama.cpp via the LlamaContext actor.
+// Manages LLM inference using llama.cpp via the LlamaContext actor.
 @MainActor
 final class LLMManager: ObservableObject {
     @Published var response: String = ""
@@ -28,9 +28,10 @@ final class LLMManager: ObservableObject {
         llamaContext = try LlamaContext.create(path: path, contextSize: 2048)
     }
 
-    /// Generate response from conversation history.
-    /// History should already contain the latest user message.
+    // Generate response from conversation history.
+    // History should already contain the latest user message.
     func generate(history: [ConversationMessage] = []) -> AsyncStream<String> {
+        
         // Cancel any previous generation first
         generationTask?.cancel()
         generationTask = nil
@@ -54,6 +55,7 @@ final class LLMManager: ObservableObject {
                     let role = message.role == .user ? "user" : "assistant"
                     fullPrompt += "<|im_start|>\(role)\n\(message.text)<|im_end|>\n"
                 }
+                
                 // Pre-fill past <think> block to force non-thinking mode
                 fullPrompt += "<|im_start|>assistant\n<think>\n</think>\n"
 
