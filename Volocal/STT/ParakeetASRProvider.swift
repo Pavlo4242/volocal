@@ -151,6 +151,10 @@ public final class ParakeetASRProvider: ASRProvider {
         }
     }
 
+    public func flush() async {
+        // Parakeet auto-flushes based on its internal VAD or on stopStreaming().
+    }
+
     public func stopStreaming() async throws {
         guard isStreaming, let manager = asrManager else { return }
         isStreaming = false

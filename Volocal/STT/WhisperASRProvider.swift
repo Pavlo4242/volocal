@@ -28,7 +28,6 @@
 
 import Foundation
 import WhisperKit
-import FluidAudio      // for VadManager (Silero VAD) — reused from FluidAudio
 import AVFoundation
 
 // MARK: - Errors
@@ -98,19 +97,11 @@ public final class WhisperASRProvider: ASRProvider {
 
     private let modelVariant: WhisperModelVariant
     private var whisper: WhisperKit?
-    private var vadManager: VadManager?
-    private var vadState: VadStreamState?
 
     private var activeLanguage: ASRLanguage = .thai
     private var accumulatedSamples: [Float] = []
     private var isStreaming = false
 
-    // VAD silence config: stop accumulating 600 ms after last speech
-    private static let vadConfig = VadSegmentationConfig(
-        minSpeechDuration: 0.25,
-        minSilenceDuration: 0.6,
-        paddingDuration: 0.1
-    )
 
     // MARK: Init
 
@@ -138,12 +129,6 @@ public final class WhisperASRProvider: ASRProvider {
             )
             whisper = try await WhisperKit(config)
 
-            // 2. Prepare FluidAudio VAD for utterance boundary detection
-            vadManager = try await VadManager(
-                config: VadConfig(defaultThreshold: 0.75)
-            )
-            vadState = await vadManager!.makeStreamState()
-
             isReady = true
         } catch {
             throw WhisperASRError.modelLoadFailed(underlying: error)
@@ -152,8 +137,6 @@ public final class WhisperASRProvider: ASRProvider {
 
     public func unload() async {
         whisper = nil
-        vadManager = nil
-        vadState = nil
         isReady = false
         isStreaming = false
         accumulatedSamples = []
@@ -168,43 +151,23 @@ public final class WhisperASRProvider: ASRProvider {
         isStreaming = true
     }
 
-    /// Feed 16 kHz mono Float32 samples.
-    /// VAD accumulates speech; when silence is detected the utterance is
-    /// transcribed and delivered via `onResult`.
     public func appendAudioSamples(_ samples: [Float]) async throws {
-        guard isStreaming, let vad = vadManager, var state = vadState else { return }
+        guard isStreaming else { return }
+        accumulatedSamples.append(contentsOf: samples)
+    }
 
-        // Run VAD on this chunk
-        let vadResult = try await vad.processStreamingChunk(
-            samples,
-            state: state,
-            config: .default,
-            returnSeconds: false
-        )
-        vadState = vadResult.state
-
-        // Accumulate speech frames
-        if vadResult.probability > 0.5 {
-            accumulatedSamples.append(contentsOf: samples)
-        }
-
-        // On silence-end event, transcribe accumulated buffer
-        if let event = vadResult.event, event.kind == .speechEnd {
-            let utterance = accumulatedSamples
-            accumulatedSamples = []
-            await transcribeUtterance(utterance)
-        }
+    public func flush() async {
+        guard isStreaming, !accumulatedSamples.isEmpty else { return }
+        let utterance = accumulatedSamples
+        accumulatedSamples = []
+        await transcribeUtterance(utterance)
     }
 
     public func stopStreaming() async throws {
         guard isStreaming else { return }
         isStreaming = false
         // Flush any remaining accumulated audio
-        if !accumulatedSamples.isEmpty {
-            let utterance = accumulatedSamples
-            accumulatedSamples = []
-            await transcribeUtterance(utterance)
-        }
+        await flush()
     }
 
     // MARK: Private — Transcription

@@ -18,7 +18,7 @@ extension ModelEntry {
         displayName: "Whisper Small (Thai / Multilingual)",
         description: "OpenAI Whisper Small converted to CoreML. Supports Thai and 99 other languages.",
         sizeBytes: 290 * 1_048_576,
-        huggingFaceRepo: "argmaxinc/whisperkit-coreml",
+        huggingFaceRepo: "aarush67/whisper-coreml-models",
         filename: "openai_whisper-small",
         isDirectory: true,   // WhisperKit downloads a directory of .mlpackage files
         requiredFor: [.thai]
@@ -30,7 +30,7 @@ extension ModelEntry {
         displayName: "Whisper Medium (Thai / Multilingual)",
         description: "Higher accuracy multilingual ASR. Recommended for Thai in noisy environments.",
         sizeBytes: 780 * 1_048_576,
-        huggingFaceRepo: "argmaxinc/whisperkit-coreml",
+        huggingFaceRepo: "aarush67/whisper-coreml-models",
         filename: "openai_whisper-medium",
         isDirectory: true,
         requiredFor: [.thai]

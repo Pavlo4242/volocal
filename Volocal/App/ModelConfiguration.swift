@@ -203,15 +203,15 @@ public static var current: ModelConfiguration {
     public func makeLLMProvider() -> any LLMProvider {
         switch llmBackend {
         case .qwen2B:
-            return LlamaLLMProvider(tier: .standard)
+            return MLXLLMProvider(tier: .standard)
         case .qwen0_8B:
-            return LlamaLLMProvider(tier: .lite)
+            return MLXLLMProvider(tier: .lite)
         case .appleFoundation:
             if FoundationModelProvider.isSupported {
                 return FoundationModelProvider()
             }
             // Graceful fallback — should not reach here if UI checks isAvailable
-            return LlamaLLMProvider(tier: .lite)
+            return MLXLLMProvider(tier: .lite)
         }
     }
 }

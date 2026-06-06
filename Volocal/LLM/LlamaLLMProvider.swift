@@ -15,7 +15,7 @@
 //   MemoryPressureMonitor auto-selects .lite when < 1500 MB available.
 
 import Foundation
-import Llama                  // llama.swift SPM package — re-exports llama.cpp C API
+import LlamaSwift                  // llama.swift SPM package — re-exports llama.cpp C API
 
 // MARK: - Errors
 

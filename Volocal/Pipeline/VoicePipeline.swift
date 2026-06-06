@@ -395,6 +395,10 @@ public final class VoicePipeline: ObservableObject {
  */
 
 extension PocketTtsManager {
+    public func initialize() async throws {
+        // Warm-up handled by SharedAudioEngine
+    }
+
     public func stop() {
         // Handled directly by SharedAudioEngine
     }

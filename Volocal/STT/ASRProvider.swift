@@ -104,6 +104,9 @@ public protocol ASRProvider: AnyObject {
     /// The provider accumulates context internally.
     func appendAudioSamples(_ samples: [Float]) async throws
 
+    /// Force immediate processing of buffered audio.
+    func flush() async
+
     /// Stop streaming and flush any pending audio.
     /// The provider delivers a final result with `isEndOfUtterance = true`.
     func stopStreaming() async throws
