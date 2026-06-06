@@ -58,6 +58,11 @@ public enum ASRBackend: String, CaseIterable, Codable, Identifiable {
 
 // MARK: - LLM Backend
 
+public enum LLMMemoryTier: String, Codable {
+    case lite
+    case standard
+}
+
 public enum LLMBackend: String, CaseIterable, Codable, Identifiable {
     /// Qwen3.5-2B Q4_K_S via llama.cpp — standard quality/speed.
     case qwen2B = "qwen3.5_2b"
