@@ -12,6 +12,9 @@ options:
   xcodeVersion: "16.0"
 
 packages:
+  llama-swift:
+    url: https://github.com/mattt/llama.swift.git
+    from: "2.0.0"
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio
     from: "0.14.5"          # CoreML ASR (Parakeet EOU), TTS (PocketTTS), VAD (Silero)
@@ -31,8 +34,8 @@ targets:
     sources:
       - Volocal
     dependencies:
-      - package: llama.swift
-      - product: llama
+      - package: llama-swift
+      - product: LlamaSwift
       - package: FluidAudio
         product: FluidAudio
       - package: mlx-swift-lm
