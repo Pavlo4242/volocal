@@ -1,0 +1,88 @@
+{
+    "project_name": "Volocal Architecture Optimization",
+    "objective": "Refactor the Volocal audio pipeline and LLM backend to achieve low-latency, real-time bidirectional Thai translation by mirroring the FluidInference architecture.",
+    "external_references": {
+        "swift_scribe": "https://github.com/FluidInference/swift-scribe",
+        "fluid_audio": "https://github.com/FluidInference/FluidAudio",
+        "mobius": "https://github.com/FluidInference/mobius"
+    },
+    "tasks": [
+        {
+            "id": "task_1_vad_gating",
+            "title": "Voice Activity Detection (VAD) as an Execution Gate",
+            "problem_statement": "SharedAudioEngine acts as an unmetered firehose, pushing every buffer to the ASR provider. This causes Whisper/Parakeet to transcribe background noise, leading to hallucinations and CPU/GPU thermal throttling.",
+            "fluid_pattern": "swift-scribe and FluidAudio use Silero VAD as an absolute gatekeeper for ASR execution.",
+            "implementation_instructions": [
+                "Instantiate `VadManager` from the FluidAudio library.",
+                "Modify the audio capture closure to evaluate `VadManager.isSpeaking`.",
+                "Only append audio samples to the ASR provider if `isSpeaking == true`.",
+                "Implement a deterministic trigger: when `isSpeaking` drops to `false` for a continuous 600ms threshold, immediately execute `handleEndOfUtterance()` instead of waiting for the STT engine to detect it."
+            ],
+            "target_local_files": [
+                "Volocal/Audio/SharedAudioEngine.swift",
+                "Volocal/Pipeline/VoicePipeline.swift"
+            ],
+            "reference_code_paths": [
+                "https://github.com/FluidInference/swift-scribe/tree/main/Sources/ScribeAudio"
+            ]
+        },
+        {
+            "id": "task_2_coreml_ane_offload",
+            "title": "ANE Offloading via CoreML",
+            "problem_statement": "LLMManager relies on llama.cpp to run .gguf files, creating severe CPU/GPU bottlenecks when running concurrently with WhisperKit, resulting in battery drain and UI stutter.",
+            "fluid_pattern": "FluidInference lab strictly uses Apple Neural Engine (ANE) optimized models via .mlpackage formats to eliminate GPU contention.",
+            "implementation_instructions": [
+                "Deprecate the use of `llama.cpp` and `LlamaContext`.",
+                "Utilize FluidInference/mobius or Apple's coremltools to convert the Qwen0.8B fallback model from .gguf to .mlpackage.",
+                "Implement a new LLMProvider that utilizes the CoreML framework to execute the .mlpackage natively on the ANE.",
+                "Update the download registry to fetch the CoreML variant instead of the GGUF."
+            ],
+            "target_local_files": [
+                "Volocal/LLM/LLMManager.swift",
+                "Volocal/LLM/LlamaContext.swift",
+                "Volocal/Models/ModelRegistry.swift",
+                "Volocal/App/ModelRegistry+Thai.swift"
+            ],
+            "reference_code_paths": [
+                "https://github.com/FluidInference/mobius",
+                "https://github.com/FluidInference/swift-scribe/tree/main/Sources/ScribeLLM"
+            ]
+        },
+        {
+            "id": "task_3_speaker_diarization",
+            "title": "Speaker Diarization (Contextual Routing)",
+            "problem_statement": "In a bidirectional translation environment, speaking English to the target while the Thai STT model is active causes the model to process English as Thai phonetics, corrupting the LLM context.",
+            "fluid_pattern": "FluidAudio utilizes Speaker Diarization to tag and filter incoming audio chunks by speaker ID in real-time.",
+            "implementation_instructions": [
+                "Implement FluidAudio's speaker diarization module within the audio pipeline.",
+                "Tag incoming audio chunks with a Speaker ID (e.g., Speaker 0 for Device Owner, Speaker 1 for Target).",
+                "Add a routing check: silently discard chunks tagged as Speaker 0 (English owner) and only forward Speaker 1's audio to the Whisper Thai ASR pipeline."
+            ],
+            "target_local_files": [
+                "Volocal/Audio/SharedAudioEngine.swift",
+                "Volocal/Pipeline/VoicePipeline.swift"
+            ],
+            "reference_code_paths": [
+                "https://github.com/FluidInference/FluidAudio/tree/main/Sources/FluidAudio/Diarization"
+            ]
+        },
+        {
+            "id": "task_4_sliding_window",
+            "title": "Sliding Window Audio Buffers",
+            "problem_statement": "Whisper models require a fixed 30-second context window. Continuous speech beyond this duration causes the pipeline to infinitely append float arrays, leading to truncation or crashes.",
+            "fluid_pattern": "swift-scribe manages continuous streaming transcription by employing sliding context windows.",
+            "implementation_instructions": [
+                "Create an `AudioContext` manager within the pipeline.",
+                "Upon the VAD triggering `handleEndOfUtterance()`, explicitly flush and destroy the accumulated `[Float]` array.",
+                "Ensure Whisper receives a completely clean, zeroed 30-second window for every new segmented sentence."
+            ],
+            "target_local_files": [
+                "Volocal/Pipeline/VoicePipeline.swift",
+                "Volocal/STT/WhisperASRProvider.swift"
+            ],
+            "reference_code_paths": [
+                "https://github.com/FluidInference/swift-scribe/tree/main/Sources/ScribeAudio/Context"
+            ]
+        }
+    ]
+}
