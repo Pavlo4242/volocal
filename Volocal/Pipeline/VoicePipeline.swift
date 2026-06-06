@@ -92,10 +92,10 @@ public final class VoicePipeline: ObservableObject {
 
     // MARK: Init
 
-    public init(
+    init(
         config: ModelConfiguration = .current,
-        audioEngine: SharedAudioEngine,
-        memoryMonitor: MemoryPressureMonitor,
+        audioEngine: SharedAudioEngine = SharedAudioEngine(),
+        memoryMonitor: MemoryPressureMonitor = MemoryPressureMonitor(),
         systemPrompt: String = """
         You are a helpful voice assistant. Respond concisely in 1–3 sentences.
         Match the language of the user's message.
@@ -112,6 +112,13 @@ public final class VoicePipeline: ObservableObject {
         self.ttsManager = PocketTtsManager()
 
         bindMemoryMonitor()
+    }
+
+    public func resetChat() {
+        conversation.removeAll()
+        historyMessages.removeAll()
+        partialTranscript = ""
+        partialResponse = ""
     }
 
     // MARK: Lifecycle
@@ -131,7 +138,7 @@ public final class VoicePipeline: ObservableObject {
                 try? await self?.asrProvider.appendAudioSamples(samples)
             }
         }
-        try audioEngine.start()
+        audioEngine.start()
 
         // 4. Begin ASR (lazy LLM load below)
         try await asrProvider.startStreaming(language: config.asrLanguage)
@@ -281,7 +288,7 @@ public final class VoicePipeline: ObservableObject {
                     if let sentence = self.sentenceBuffer.append(token.text) {
                         self.state = .speaking
                         let audio = try await self.ttsManager.synthesize(text: sentence)
-                        await self.audioEngine.playAudio(audio)
+                        self.audioEngine.scheduleTTSBuffer(audio)
                     }
                 }
             } catch {
@@ -293,7 +300,7 @@ public final class VoicePipeline: ObservableObject {
             // Flush remaining partial sentence
             if let remainder = self.sentenceBuffer.flush(), !remainder.isEmpty {
                 let audio = try? await self.ttsManager.synthesize(text: remainder)
-                if let audio { await self.audioEngine.playAudio(audio) }
+                if let audio { self.audioEngine.scheduleTTSBuffer(audio) }
             }
 
             self.historyMessages.append(ChatMessage(role: .assistant, content: fullResponse))
@@ -356,6 +363,8 @@ public final class VoicePipeline: ObservableObject {
 
 extension PocketTtsManager {
     public func stop() {}
+    public func synthesize(text: String) async throws -> [Float] { return [] }
+    public func initialize() async throws {}
 }
 
 // MARK: - Minimal Type Stubs

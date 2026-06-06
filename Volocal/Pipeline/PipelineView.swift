@@ -11,16 +11,16 @@ struct PipelineView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(pipeline.conversationHistory) { message in
-                                MessageBubble(message: message)
-                                    .id(message.id)
+                            ForEach(pipeline.conversation) { turn in
+                                MessageBubble(message: turn)
+                                    .id(turn.id)
                             }
 
                             // Show current partial response (visible while LLM generates and TTS speaks)
-                            if !pipeline.currentResponse.isEmpty && (pipeline.state == .processing || pipeline.state == .speaking) {
-                                MessageBubble(message: ConversationMessage(
+                            if !pipeline.partialResponse.isEmpty && (pipeline.state == .processing || pipeline.state == .speaking) {
+                                MessageBubble(message: ConversationTurn(
                                     role: .assistant,
-                                    text: pipeline.currentResponse
+                                    content: pipeline.partialResponse
                                 ))
                             }
 
@@ -29,12 +29,12 @@ struct PipelineView: View {
                         }
                         .padding()
                     }
-                    .onChange(of: pipeline.conversationHistory.count) {
+                    .onChange(of: pipeline.conversation.count) {
                         withAnimation {
                             proxy.scrollTo("bottom", anchor: .bottom)
                         }
                     }
-                    .onChange(of: pipeline.currentResponse) {
+                    .onChange(of: pipeline.partialResponse) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
@@ -65,7 +65,13 @@ struct PipelineView: View {
 
                     // Mic button
                     Button {
-                        pipeline.toggleListening()
+                        Task {
+                            if pipeline.state == .listening {
+                                await pipeline.stop()
+                            } else {
+                                try? await pipeline.start()
+                            }
+                        }
                     } label: {
                         ZStack {
                             Circle()
@@ -90,7 +96,7 @@ struct PipelineView: View {
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                     }
-                    .disabled(pipeline.conversationHistory.isEmpty)
+                    .disabled(pipeline.conversation.isEmpty)
                 }
             }
         }
@@ -124,13 +130,13 @@ struct PipelineView: View {
 // MARK: - Message Bubble
 
 struct MessageBubble: View {
-    let message: ConversationMessage
+    let message: ConversationTurn
 
     var body: some View {
         HStack {
             if message.role == .user { Spacer(minLength: 60) }
 
-            Text(message.text)
+            Text(message.content)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(message.role == .user ? Color.blue : Color(.systemGray5))

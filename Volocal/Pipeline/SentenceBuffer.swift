@@ -12,18 +12,14 @@ final class SentenceBuffer {
     /// Maximum characters before forcing a split at nearest word boundary
     private let maxChars = 200
 
-    /// Add a token to the buffer. May trigger onSentenceReady if a sentence boundary is found.
-    func append(_ token: String) {
+    /// Add a token to the buffer. Returns a sentence if one is complete.
+    func append(_ token: String) -> String? {
         buffer += token
 
         // Look for sentence boundaries
-        while let range = findSentenceBoundary() {
+        if let range = findSentenceBoundary() {
             let sentence = String(buffer[buffer.startIndex...range.upperBound])
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if !sentence.isEmpty {
-                onSentenceReady?(sentence)
-            }
 
             let nextIndex = buffer.index(after: range.upperBound)
             if nextIndex < buffer.endIndex {
@@ -32,21 +28,23 @@ final class SentenceBuffer {
             } else {
                 buffer = ""
             }
+            
+            return sentence.isEmpty ? nil : sentence
         }
 
         // Force split if buffer exceeds max length
         if buffer.count > maxChars {
-            forceSplitAtWordBoundary()
+            return forceSplitAtWordBoundary()
         }
+        
+        return nil
     }
 
     /// Flush any remaining text in the buffer (call at end of generation)
-    func flush() {
+    func flush() -> String? {
         let remaining = buffer.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !remaining.isEmpty {
-            onSentenceReady?(remaining)
-        }
         buffer = ""
+        return remaining.isEmpty ? nil : remaining
     }
 
     /// Reset the buffer
@@ -103,7 +101,7 @@ final class SentenceBuffer {
     }
 
     /// Force a split at the nearest word boundary when buffer is too long.
-    private func forceSplitAtWordBoundary() {
+    private func forceSplitAtWordBoundary() -> String? {
         // Find last space before maxChars
         var splitIndex = buffer.startIndex
         for i in buffer.indices {
@@ -117,9 +115,6 @@ final class SentenceBuffer {
         if splitIndex > buffer.startIndex {
             let sentence = String(buffer[buffer.startIndex..<splitIndex])
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !sentence.isEmpty {
-                onSentenceReady?(sentence)
-            }
 
             let nextIndex = buffer.index(after: splitIndex)
             if nextIndex < buffer.endIndex {
@@ -127,6 +122,9 @@ final class SentenceBuffer {
             } else {
                 buffer = ""
             }
+            
+            return sentence.isEmpty ? nil : sentence
         }
+        return nil
     }
 }
