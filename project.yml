@@ -21,7 +21,7 @@ packages:
 
   mlx-swift-lm:
     url: https://github.com/ml-explore/mlx-swift-lm
-    from: "0.12.0"        # Apple MLX LLM Common framework
+    from: "3.31.3"        # Apple MLX LLM Common framework
 
   WhisperKit:                # NEW — Thai + 99-language ASR via CoreML Whisper
     url: https://github.com/argmaxinc/whisperkit
@@ -44,6 +44,10 @@ targets:
         product: MLXLLM
       - package: mlx-swift-lm
         product: MLXHuggingFace
+      - package: swift-huggingface
+        product: HuggingFace
+      - package: swift-transformers
+        product: Tokenizers
       
       - package: WhisperKit
         product: WhisperKit
