@@ -9,7 +9,7 @@ import AVFoundation
 
 /// Languages supported across ASR providers.
 /// Each provider declares which set it can handle.
-public enum ASRLanguage: String, CaseIterable, Identifiable, Codable {
+public enum ASRLanguage: String, CaseIterable, Identifiable, Codable, Sendable {
     case english   = "en"
     case thai      = "th"
     case japanese  = "ja"

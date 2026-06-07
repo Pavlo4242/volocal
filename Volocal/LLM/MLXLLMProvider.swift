@@ -9,7 +9,7 @@ import MLXLMCommon
 import MLXLLM
 import MLXHuggingFace
 
-public final class MLXLLMProvider: LLMProvider {
+public final class MLXLLMProvider: LLMProvider, @unchecked Sendable {
 
     // MARK: LLMProvider conformance
 
@@ -87,7 +87,7 @@ public init(tier: LLMMemoryTier) {
 
                     // ModelContainer.perform gives us exclusive access to the
                     // non-Sendable ModelContext inside the actor.
-                    let _ = try await container.perform { context in
+                    let stream = try await container.perform { context in
                         let input = try await context.processor.prepare(
                             input: .init(prompt: prompt)
                         )
@@ -96,23 +96,20 @@ public init(tier: LLMMemoryTier) {
                             input: input,
                             parameters: .init(temperature: 0.7, topP: 0.9),
                             context: context
-                        ) { tokens -> GenerateDisposition in
-                            guard !Task.isCancelled, !self.isCancelled else { return .stop }
+                        )
+                    }
+                    
+                    for try await result in stream {
+                        guard !Task.isCancelled, !self.isCancelled else { break }
 
-                            tokenCount += 1
-                            let newText = context.tokenizer.decode(tokenIds: tokens)
-                            // newText is the full decoded string so far; we need the delta.
-                            // But generate() gives us the full token array each call, so
-                            // decode just the latest token for the delta.
-                            let latestToken = [tokens.last].compactMap { $0 }
-                            let delta = context.tokenizer.decode(tokenIds: latestToken)
+                        tokenCount += 1
+                        let delta = result.text 
 
-                            if !delta.isEmpty {
-                                continuation.yield(LLMToken(text: delta, isLast: false))
-                            }
-
-                            return tokenCount >= 512 ? .stop : .more
+                        if !delta.isEmpty {
+                            continuation.yield(LLMToken(text: delta, isLast: false))
                         }
+
+                        if tokenCount >= 512 { break }
                     }
 
                     let elapsed = Date().timeIntervalSince(startTime)

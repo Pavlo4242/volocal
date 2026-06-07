@@ -4,7 +4,7 @@
 import Foundation
 
 /// A single downloadable model entry in the registry.
-public struct ModelEntry: Identifiable, Equatable {
+public struct ModelEntry: Identifiable, Equatable, Sendable {
     public let id: String
     public let displayName: String
     public let description: String

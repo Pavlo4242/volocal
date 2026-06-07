@@ -189,7 +189,7 @@ final class UnifiedModelManager: ObservableObject {
         modelStates[.stt] = .downloading(progress: 0)
 
         do {
-            try await DownloadUtils.downloadRepo(.qwen3Asr0_6b, to: ModelRegistry.modelsDirectory) { [weak self] progress in
+            try await DownloadUtils.downloadRepo(.parakeetEou320, to: ModelRegistry.modelsDirectory) { [weak self] progress in
                 Task { @MainActor in
                     self?.modelStates[.stt] = .downloading(progress: progress.fractionCompleted)
                 }
@@ -239,16 +239,16 @@ final class UnifiedModelManager: ObservableObject {
 
 // MARK: - URLSession Download Delegate for LLM progress
 
-private final class LLMDownloadDelegate: NSObject, URLSessionDownloadDelegate {
-    let onProgress: (Int64, Int64) -> Void
-    let onComplete: (URL?, Error?) -> Void
+private final class LLMDownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    let onProgress: @Sendable (Int64, Int64) -> Void
+    let onComplete: @Sendable (URL?, Error?) -> Void
     // Hold session reference to prevent deallocation during download
     var session: URLSession?
     private var hasCompleted = false
 
     init(
-        onProgress: @escaping (Int64, Int64) -> Void,
-        onComplete: @escaping (URL?, Error?) -> Void
+        onProgress: @escaping @Sendable (Int64, Int64) -> Void,
+        onComplete: @escaping @Sendable (URL?, Error?) -> Void
     ) {
         self.onProgress = onProgress
         self.onComplete = onComplete

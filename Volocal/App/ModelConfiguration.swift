@@ -15,7 +15,7 @@ import Combine
 // MARK: - ASR Backend
 
 // Update ASRBackend raw value and display name
-    public enum ASRBackend: String, CaseIterable, Codable, Identifiable {
+    public enum ASRBackend: String, CaseIterable, Codable, Identifiable, Sendable {
     /// Parakeet EOU via FluidAudio — English only, ultra-low latency, ANE.
     case parakeet = "qwen3_asr_0.6b"
     /// Whisper Small via WhisperKit — multilingual including Thai, chunk-based.
@@ -59,12 +59,12 @@ import Combine
 
 // MARK: - LLM Backend
 
-public enum LLMMemoryTier: String, Codable {
+public enum LLMMemoryTier: String, Codable, Sendable {
     case lite
     case standard
 }
 
-public enum LLMBackend: String, CaseIterable, Codable, Identifiable {
+public enum LLMBackend: String, CaseIterable, Codable, Identifiable, Sendable {
     /// Qwen3.5-2B Q4_K_S via llama.cpp — standard quality/speed.
     case qwen2B = "typhoon_translate_4b"
     /// Qwen3.5-0.8B Q4_K_S via llama.cpp — memory-efficient, faster.  UNSURE IF THIS EXISTS
@@ -117,7 +117,7 @@ public enum LLMBackend: String, CaseIterable, Codable, Identifiable {
 
 /// Immutable snapshot of the user's chosen model stack.
 /// Build one, pass it to VoicePipeline, and regenerate when the user changes settings.
-public struct ModelConfiguration: Codable, Equatable {
+public struct ModelConfiguration: Codable, Equatable, Sendable {
 
     // MARK: Properties
 

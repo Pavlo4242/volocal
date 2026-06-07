@@ -6,8 +6,8 @@ import Foundation
 
 // MARK: - Chat Message
 
-public struct ChatMessage: Codable {
-    public enum Role: String, Codable {
+public struct ChatMessage: Codable, Sendable {
+    public enum Role: String, Codable, Sendable {
         case system, user, assistant
     }
     public let role: Role
@@ -22,7 +22,7 @@ public struct ChatMessage: Codable {
 // MARK: - LLM Token
 
 /// A single streaming token emitted during generation.
-public struct LLMToken {
+public struct LLMToken: Sendable {
     public let text: String
     public let isLast: Bool
     public init(text: String, isLast: Bool = false) {

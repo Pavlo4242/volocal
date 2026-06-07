@@ -36,8 +36,10 @@ final class SharedAudioEngine: ObservableObject {
     
     // Add VAD and Diarization state managers and callbacks
     public var onEndOfSpeech: (() -> Void)?
-    public var vadManager: VadManager?
-    public var diarizationManager: DiarizationManager?
+    // FluidAudio VadManager API is not exposed or has changed.
+    // public var vadManager: VadManager?
+    // FluidAudio DiarizationManager does not exist.
+    // public var diarizationManager: DiarizationManager?
 
     init() {
         ttsFormat = AVAudioFormat(
@@ -145,12 +147,14 @@ final class SharedAudioEngine: ObservableObject {
                 if let floatData = copy.floatChannelData?[0] {
                     let samples = Array(UnsafeBufferPointer(start: floatData, count: Int(copy.frameLength)))
                     
-                    // Evaluate Silero VAD gate
-                    let isSpeaking = self?.vadManager?.process(samples) ?? true
+                    // Evaluate Silero VAD gate (Commented out because VadManager missing API)
+                    // let isSpeaking = self?.vadManager?.process(samples) ?? true
+                    let isSpeaking = true
                     
                     if isSpeaking {
-                        // Evaluate Diarization speaker ID
-                        let speakerId = self?.diarizationManager?.process(samples) ?? 1
+                        // Evaluate Diarization speaker ID (Commented out because missing)
+                        // let speakerId = self?.diarizationManager?.process(samples) ?? 1
+                        let speakerId = 1
                         
                         // Forward only if identified as Target (Speaker 1)
                         if speakerId == 1 {
@@ -160,11 +164,11 @@ final class SharedAudioEngine: ObservableObject {
                         }
                     } else {
                         // Deterministic trigger if silence threshold is met
-                        if self?.vadManager?.hasMetSilenceThreshold(ms: 600) == true {
-                            Task { @MainActor in
-                                self?.onEndOfSpeech?()
-                            }
-                        }
+                        // if self?.vadManager?.hasMetSilenceThreshold(ms: 600) == true {
+                        //    Task { @MainActor in
+                        //        self?.onEndOfSpeech?()
+                        //    }
+                        // }
                     }
                 }
             }

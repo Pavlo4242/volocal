@@ -1,5 +1,5 @@
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 import FluidAudio
 import os
 
@@ -39,12 +39,12 @@ final class STTManager: ObservableObject {
     func initialize() async {
         do {
             let modelsDir = Self.modelsDirectory()
-            let modelDir = modelsDir.appendingPathComponent(Repo.qwen3Asr0_6b.folderName)
+            let modelDir = modelsDir.appendingPathComponent(Repo.parakeetEou320.folderName)
 
             let encoderPath = modelDir.appendingPathComponent("streaming_encoder.mlmodelc")
             if !FileManager.default.fileExists(atPath: encoderPath.path) {
                 logger.info("Downloading Qwen3 ASR models...")
-                try await DownloadUtils.downloadRepo(.qwen3Asr0_6b, to: modelsDir)
+                try await DownloadUtils.downloadRepo(.parakeetEou320, to: modelsDir)
                 logger.info("Qwen3 ASR models downloaded")
             }
 
@@ -75,7 +75,7 @@ final class STTManager: ObservableObject {
             }
 
             logger.info("Loading Parakeet EOU models from \(modelDir.path)...")
-            try await manager.loadModels(modelDir: modelDir)
+            try await manager.loadModels(from: modelDir)
             self.asrManager = manager
             logger.info("Parakeet EOU ready")
         } catch {

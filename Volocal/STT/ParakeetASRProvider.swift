@@ -10,7 +10,6 @@ import AVFoundation
 
 enum ParakeetASRError: LocalizedError {
     case notPrepared
-    case unsupportedLanguage(ASRLanguage)
     case modelLoadFailed(underlying: Error)
     case streamingFailed(underlying: Error)
 
@@ -18,8 +17,6 @@ enum ParakeetASRError: LocalizedError {
         switch self {
         case .notPrepared:
             return "ParakeetASRProvider: call prepare() before streaming."
-        case .unsupportedLanguage(let lang):
-            return "ParakeetASRProvider: \(lang.displayName) is not supported. Use WhisperASRProvider."
         case .modelLoadFailed(let err):
             return "ParakeetASRProvider: model load failed — \(err.localizedDescription)"
         case .streamingFailed(let err):
@@ -79,14 +76,19 @@ public final class ParakeetASRProvider: ASRProvider {
     public func prepare() async throws {
         guard !isReady else { return }
         do {
-            // Download (or load from cache) the Parakeet EOU 120M CoreML bundle.
-            // This is the same model fikrikarim/volocal uses — no change here.
-            let models = try await AsrModels.downloadAndLoad(model: .qwen3Asr0_6b)
+            let modelsDir = STTManager.modelsDirectory()
+            let modelDir = modelsDir.appendingPathComponent(Repo.parakeetEou320.folderName)
+
+            let encoderPath = modelDir.appendingPathComponent("streaming_encoder.mlmodelc")
+            if !FileManager.default.fileExists(atPath: encoderPath.path) {
+                try await DownloadUtils.downloadRepo(.parakeetEou320, to: modelsDir)
+            }
+
             let config = SlidingWindowAsrConfig.default // FluidAudio's config wrapper
             let manager = SlidingWindowAsrManager(config: config)
-            try await manager.loadModels(models)
+            try await manager.loadModels(from: modelDir)
 
-            self.asrModels = models
+            self.asrModels = nil
             self.asrManager = manager
             self.isReady = true
         } catch {
@@ -109,9 +111,6 @@ public final class ParakeetASRProvider: ASRProvider {
     // MARK: Streaming
 
     public func startStreaming(language: ASRLanguage) async throws {
-        guard language == .english else {
-            throw ParakeetASRError.unsupportedLanguage(language)
-        }
         guard let manager = asrManager, isReady else {
             throw ParakeetASRError.notPrepared
         }
