@@ -183,7 +183,8 @@ actor LlamaContext {
             return nil
         }
 
-        let text = String(decoding: buf, as: UTF8.self).trimmingCharacters(in: .controlCharacters)  // or handle null byte properly
+        let validBytes = buf.prefix(upTo: Int(nChars)).map { UInt8(bitPattern: $0) }
+        let text = String(decoding: validBytes, as: UTF8.self)
 
         // Prepare next batch
         llama_batch_clear(&batch)

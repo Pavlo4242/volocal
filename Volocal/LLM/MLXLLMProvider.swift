@@ -1,48 +1,66 @@
 // Volocal/LLM/MLXLLMProvider.swift
-// MLX Swift adapter — hardware-accelerated LLM on Apple Silicon.
+// MLX Swift adapter – hardware-accelerated LLM on Apple Silicon.
 //
 // Uses mlx-swift-lm (MLXLMCommon + MLXLLM) for tokenization, generation,
 // and streaming detokenization.
-// MARK: Private State
-private let tier: LLMMemoryTier
-private var modelContainer: ModelContainer?
-private var generateTask: Task<Void, Error>?
-private var isCancelled = false
 
-// MARK: Init
-public init(tier: LLMMemoryTier) {
-    self.tier = tier
-    self.name = "MLX Swift / Typhoon Translate 4B"
-}
+import Foundation
+import MLXLMCommon
+import MLXLLM
 
-// MARK: Lifecycle
-public func prepare() async throws {
-    guard !isReady else { return }
-    
-    let hubID = "typhoon-ai/typhoon-translate-4b-mlx-4bit"
-    
-    // Fully qualified to avoid name collision with your own ModelConfiguration
-    let mlxConfig = MLXLMCommon.ModelConfiguration(id: hubID)
-    
-    // Recommended: Use LLMModelFactory for more control (progress, error handling)
-    modelContainer = try await LLMModelFactory.shared.loadContainer(
-        configuration: mlxConfig
-    ) { progress in
-        // Optional: report progress to UI
-        Task { @MainActor in
-            // e.g., self.downloadProgress = progress.fractionCompleted
-            print("Downloading model: \(Int(progress.fractionCompleted * 100))%")
-        }
+public final class MLXLLMProvider: LLMProvider, @unchecked Sendable {
+
+    // MARK: LLMProvider conformance
+
+    public let name: String
+    public var estimatedMemoryMB: Int { tier == .standard ? 1260 : 520 }
+    public let maxContextTokens: Int = 4096
+    public private(set) var isReady: Bool = false
+    public private(set) var tokensPerSecond: Double = 0.0
+
+    // MARK: Private State
+
+    private let tier: LLMMemoryTier
+    private var modelContainer: ModelContainer?
+    private var generateTask: Task<Void, Error>?
+    private var isCancelled = false
+
+    // MARK: Init
+
+    public init(tier: LLMMemoryTier) {
+        self.tier = tier
+        self.name = "MLX Swift / Typhoon Translate 4B"
     }
-    
-    isReady = true
-}
 
-public func unload() async {
-    generateTask?.cancel()
-    modelContainer = nil
-    isReady = false
-}
+    // MARK: Lifecycle
+
+    public func prepare() async throws {
+        guard !isReady else { return }
+        
+        let hubID = "typhoon-ai/typhoon-translate-4b-mlx-4bit"
+        
+        // Fully qualified to avoid name collision with your own ModelConfiguration
+        let mlxConfig = MLXLMCommon.ModelConfiguration(id: hubID)
+        
+        // Recommended: Use LLMModelFactory for more control (progress, error handling)
+        modelContainer = try await LLMModelFactory.shared.loadContainer(
+            configuration: mlxConfig
+        ) { progress in
+            // Optional: report progress to UI
+            Task { @MainActor in
+                // e.g., self.downloadProgress = progress.fractionCompleted
+                print("Downloading model: \(Int(progress.fractionCompleted * 100))%")
+            }
+        }
+        
+        isReady = true
+    }
+
+    public func unload() async {
+        generateTask?.cancel()
+        modelContainer = nil
+        isReady = false
+    }
 
     // MARK: Generation
 
@@ -109,7 +127,7 @@ public func unload() async {
         generateTask?.cancel()
     }
 
-    // MARK: Private — Prompt Building
+    // MARK: Private - Prompt Building
 
     private func buildPrompt(systemPrompt: String, messages: [ChatMessage]) -> String {
         let trimmed = trimmedMessages(messages)

@@ -75,7 +75,7 @@ final class STTManager: ObservableObject {
             }
 
             logger.info("Loading Parakeet EOU models from \(modelDir.path)...")
-            try await manager.loadModels(from: modelDir)
+            try await manager.loadModels(modelDir)
             self.asrManager = manager
             logger.info("Parakeet EOU ready")
         } catch {

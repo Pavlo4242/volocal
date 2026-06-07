@@ -120,9 +120,15 @@ jobs:
      #       -scheme "$SCHEME" \
     #        -configuration Debug \
     #        -derivedDataPath "$DERIVED_DATA" \
-   #         -destination "platform=iOS Simulator,name=$SIMULATOR" \
-#            -verbose \
-#            CODE_SIGNING_ALLOWED=NO \
+    #        -destination "platform=iOS Simulator,name=$SIMULATOR" \
+    #        -verbose \
+    #        CODE_SIGNING_ALLOWED=NO \
+    #        CODE_SIGNING_REQUIRED=NO \
+    #        CODE_SIGN_IDENTITY="" \
+    #        CODE_SIGN_ENTITLEMENTS="" \
+    #        PROVISIONING_PROFILE_SPECIFIER="" \
+    #        DEVELOPMENT_TEAM="" \
+    #        AD_HOC_CODE_SIGNING_ALLOWED=YES \
           #  2>&1 | xcbeautify --renderer github-actions || true
       # ── Package Unsigned IPA ────────────────────────────────────────
 

@@ -199,7 +199,7 @@ public final class LlamaLLMProvider: LLMProvider {
                     }
 
                     llama_sampler_free(samplerChain)
-                    llama_kv_cache_clear(context)
+                    llama_kv_cache_seq_rm(context, -1, -1, -1)
 
                     let elapsed = Date().timeIntervalSince(startTime)
                     if elapsed > 0 {
