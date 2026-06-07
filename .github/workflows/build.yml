@@ -67,15 +67,9 @@ jobs:
     
         
 
-      - name: Generate Xcode project
-        run: xcodegen generate
+  
 
-      - name: Export Xcode Project Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: XcodeProject
-          path: Volocal.xcodeproj/
-          retention-days: 7
+  
      # CRITICAL STEP: Trust Swift Package Manager macros automatically
       - name: Trust Swift Package Macros
         run: |
