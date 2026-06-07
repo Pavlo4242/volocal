@@ -8,8 +8,6 @@ import Foundation
 import MLXLMCommon
 import MLXLLM
 import MLXHuggingFace
-import Tokenizers
-import Hub
 
 public final class MLXLLMProvider: LLMProvider, @unchecked Sendable {
 
@@ -105,7 +103,9 @@ public init(tier: LLMMemoryTier) {
                         guard !Task.isCancelled, !self.isCancelled else { break }
 
                         tokenCount += 1
-                        if let delta = result.text, !delta.isEmpty {
+                        let delta = result.text 
+
+                        if !delta.isEmpty {
                             continuation.yield(LLMToken(text: delta, isLast: false))
                         }
 

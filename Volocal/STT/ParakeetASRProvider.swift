@@ -86,7 +86,7 @@ public final class ParakeetASRProvider: ASRProvider {
 
             let config = SlidingWindowAsrConfig.default // FluidAudio's config wrapper
             let manager = SlidingWindowAsrManager(config: config)
-            try await manager.loadModels(from: modelDir)
+            try await manager.loadModels(from: modelDir.path)
 
             self.asrModels = nil
             self.asrManager = manager
