@@ -56,8 +56,8 @@ jobs:
           ls /Applications/ | grep Xcode
           # Use the latest stable Xcode on the runner
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          xcodebuild -version
-          xcrun simctl list runtimes
+    #      xcodebuild -version
+      #    xcrun simctl list runtimes
       - name: Install xcbeautify
         run: brew install xcbeautify
 
@@ -81,6 +81,7 @@ jobs:
             -derivedDataPath "$DERIVED_DATA" \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
+            -verbose \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -114,6 +115,7 @@ jobs:
             -configuration Debug \
             -derivedDataPath "$DERIVED_DATA" \
             -destination "platform=iOS Simulator,name=$SIMULATOR" \
+            -verbose \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | xcbeautify --renderer github-actions || true
       # ── Package Unsigned IPA ────────────────────────────────────────
