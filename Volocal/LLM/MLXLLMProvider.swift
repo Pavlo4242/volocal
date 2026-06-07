@@ -28,9 +28,9 @@ public final class MLXLLMProvider: LLMProvider {
 
     // MARK: Init
 
-    public init(tier: LLMMemoryTier) {
+public init(tier: LLMMemoryTier) {
         self.tier = tier
-        self.name = "MLX Swift / \(tier == .standard ? "Qwen 2B" : "Qwen 0.5B")"
+        self.name = "MLX Swift / Typhoon Translate 4B"
     }
 
     // MARK: Lifecycle
@@ -40,10 +40,9 @@ public final class MLXLLMProvider: LLMProvider {
 
         // Use the MLXLMCommon free function to load a model container.
         // The hub ID references a pre-quantized MLX model on HuggingFace.
-        let hubID = tier == .standard
-            ? "mlx-community/Qwen1.5-1.8B-Chat-4bit"
-            : "mlx-community/Qwen1.5-0.5B-Chat-4bit"
+      let hubID = "typhoon-ai/typhoon-translate-4b-mlx-4bit"
 
+      
         // Create an MLXLMCommon.ModelConfiguration (fully qualified to avoid
         // collision with Volocal's own ModelConfiguration struct).
         let mlxConfig = MLXLMCommon.ModelConfiguration(id: hubID)

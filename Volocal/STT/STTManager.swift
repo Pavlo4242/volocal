@@ -35,16 +35,17 @@ final class STTManager: ObservableObject {
     init() {}
 
     /// Download Parakeet EOU models from HuggingFace and load into memory.
+// Update STTManager initialization and downloading repository references
     func initialize() async {
         do {
             let modelsDir = Self.modelsDirectory()
-            let modelDir = modelsDir.appendingPathComponent(Repo.parakeetEou320.folderName)
+            let modelDir = modelsDir.appendingPathComponent(Repo.qwen3Asr0_6b.folderName)
 
             let encoderPath = modelDir.appendingPathComponent("streaming_encoder.mlmodelc")
             if !FileManager.default.fileExists(atPath: encoderPath.path) {
-                logger.info("Downloading Parakeet EOU models...")
-                try await DownloadUtils.downloadRepo(.parakeetEou320, to: modelsDir)
-                logger.info("Parakeet EOU models downloaded")
+                logger.info("Downloading Qwen3 ASR models...")
+                try await DownloadUtils.downloadRepo(.qwen3Asr0_6b, to: modelsDir)
+                logger.info("Qwen3 ASR models downloaded")
             }
 
             let manager = StreamingEouAsrManager(chunkSize: .ms320, eouDebounceMs: 300)

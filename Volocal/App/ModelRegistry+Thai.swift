@@ -81,13 +81,13 @@ extension ModelRegistry {
 
 extension ModelEntry {
     static let qwen0_8B = ModelEntry(
-        id: "qwen3.5-0.8b-q4ks",
-        displayName: "Qwen3.5-0.8B (Lite LLM, 520 MB)",
-        description: "Smaller, faster language model. Recommended when memory is limited or Thai ASR is active.",
-        sizeBytes: 520 * 1_048_576,
-        huggingFaceRepo: "bartowski/Qwen_Qwen3.5-0.8B-GGUF",
-        filename: "Qwen3.5-0.8B-Q4_K_S.gguf",
-        isDirectory: false,
+       id: "typhoon-translate-4b-mlx-4bit-lite",
+        displayName: "Typhoon Translate 4B (Lite)",
+        description: "Smaller, faster language model. Recommended when memory is limited.",
+        sizeBytes: 2500 * 1_048_576,
+        huggingFaceRepo: "typhoon-ai/typhoon-translate-4b-mlx-4bit",
+        filename: "typhoon-translate-4b-mlx-4bit",
+        isDirectory: true,
         requiredFor: [.english, .thai]
     )
 }

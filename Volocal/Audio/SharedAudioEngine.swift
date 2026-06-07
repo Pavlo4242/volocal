@@ -32,7 +32,12 @@ final class SharedAudioEngine: ObservableObject {
 
     let ttsFormat: AVAudioFormat
 
-    public var onAudioBuffer: (([Float]) -> Void)?
+   public var onAudioBuffer: (([Float]) -> Void)?
+    
+    // Add VAD and Diarization state managers and callbacks
+    public var onEndOfSpeech: (() -> Void)?
+    public var vadManager: VadManager?
+    public var diarizationManager: DiarizationManager?
 
     init() {
         ttsFormat = AVAudioFormat(
@@ -139,8 +144,27 @@ final class SharedAudioEngine: ObservableObject {
                 
                 if let floatData = copy.floatChannelData?[0] {
                     let samples = Array(UnsafeBufferPointer(start: floatData, count: Int(copy.frameLength)))
-                    Task { @MainActor in
-                        self?.onAudioBuffer?(samples)
+                    
+                    // Evaluate Silero VAD gate
+                    let isSpeaking = self?.vadManager?.process(samples) ?? true
+                    
+                    if isSpeaking {
+                        // Evaluate Diarization speaker ID
+                        let speakerId = self?.diarizationManager?.process(samples) ?? 1
+                        
+                        // Forward only if identified as Target (Speaker 1)
+                        if speakerId == 1 {
+                            Task { @MainActor in
+                                self?.onAudioBuffer?(samples)
+                            }
+                        }
+                    } else {
+                        // Deterministic trigger if silence threshold is met
+                        if self?.vadManager?.hasMetSilenceThreshold(ms: 600) == true {
+                            Task { @MainActor in
+                                self?.onEndOfSpeech?()
+                            }
+                        }
                     }
                 }
             }

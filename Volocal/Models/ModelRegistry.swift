@@ -13,8 +13,8 @@ enum ModelRegistry {
 
         var displayName: String {
             switch self {
-            case .llm: return "Language Model"
-            case .stt: return "Speech Recognition"
+            case .llm: return "Typhoon Translate 4B"
+            case .stt: return "Qwen3 ASR 0.6B"
             case .tts: return "Text-to-Speech"
             }
         }
@@ -46,9 +46,9 @@ enum ModelRegistry {
 
     // MARK: - LLM
 
-    static let llmFilename = "Qwen_Qwen3.5-2B-Q4_K_S.gguf"
+    static let llmFilename = "typhoon-translate-4b-mlx-4bit"
 
-    static let llmBaseURL = "https://huggingface.co/bartowski/Qwen_Qwen3.5-2B-GGUF/resolve/main"
+    static let llmBaseURL = "https://huggingface.co/typhoon-ai/typhoon-translate-4b-mlx-4bit/resolve/main"
 
     static var llmDownloadURL: String {
         "\(llmBaseURL)/\(llmFilename)"

@@ -151,12 +151,20 @@ public final class VoicePipeline: ObservableObject {
         // 2. Warm up TTS
         try await ttsManager.initialize()
 
-        // 3. Start audio capture
+     // 3. Start audio capture
         audioEngine.onAudioBuffer = { [weak self] samples in
             Task { [weak self] in
                 try? await self?.asrProvider.appendAudioSamples(samples)
             }
         }
+        
+        audioEngine.onEndOfSpeech = { [weak self] in
+            Task { [weak self] in
+                // Cast to WhisperASRProvider to trigger the specific flush method
+                await (self?.asrProvider as? WhisperASRProvider)?.flush()
+            }
+        }
+        
         audioEngine.start()
         audioEngine.beginInputCapture()
 

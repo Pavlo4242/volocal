@@ -40,7 +40,7 @@ public final class ParakeetASRProvider: ASRProvider {
 
     // MARK: ASRProvider
 
-    public let name = "Parakeet EOU (FluidAudio)"
+    public let name = "Qwen3 ASR (FluidAudio)"
     public let supportedLanguages: [ASRLanguage] = [.english]
     public var estimatedMemoryMB: Int { 200 }
 
@@ -81,7 +81,7 @@ public final class ParakeetASRProvider: ASRProvider {
         do {
             // Download (or load from cache) the Parakeet EOU 120M CoreML bundle.
             // This is the same model fikrikarim/volocal uses — no change here.
-            let models = try await AsrModels.downloadAndLoad(model: .parakeetEou)
+            let models = try await AsrModels.downloadAndLoad(model: .qwen3Asr0_6b)
             let config = SlidingWindowAsrConfig.default // FluidAudio's config wrapper
             let manager = SlidingWindowAsrManager(config: config)
             try await manager.loadModels(models)

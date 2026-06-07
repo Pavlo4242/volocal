@@ -50,7 +50,7 @@ final class UnifiedModelManager: ObservableObject {
         }
 
         // STT: check if Parakeet EOU models exist
-        let sttDir = ModelRegistry.modelsDirectory.appendingPathComponent(Repo.parakeetEou320.folderName)
+        let sttDir = ModelRegistry.modelsDirectory.appendingPathComponent(Repo.qwen3Asr0_6b.folderName)
         let encoderPath = sttDir.appendingPathComponent("streaming_encoder.mlmodelc")
         if FileManager.default.fileExists(atPath: encoderPath.path) {
             modelStates[.stt] = .downloaded
@@ -185,11 +185,11 @@ final class UnifiedModelManager: ObservableObject {
 
     // MARK: - STT Download (FluidAudio with progress)
 
-    private func downloadSTT() async {
+ private func downloadSTT() async {
         modelStates[.stt] = .downloading(progress: 0)
 
         do {
-            try await DownloadUtils.downloadRepo(.parakeetEou320, to: ModelRegistry.modelsDirectory) { [weak self] progress in
+            try await DownloadUtils.downloadRepo(.qwen3Asr0_6b, to: ModelRegistry.modelsDirectory) { [weak self] progress in
                 Task { @MainActor in
                     self?.modelStates[.stt] = .downloading(progress: progress.fractionCompleted)
                 }

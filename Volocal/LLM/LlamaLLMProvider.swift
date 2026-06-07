@@ -50,7 +50,7 @@ public final class LlamaLLMProvider: LLMProvider {
 
     // MARK: LLMProvider
 
-    public var name: String { "llama.cpp / \(tier == .standard ? "Qwen 2B" : "Qwen 0.8B")" }
+    public var name: String { "llama.cpp / Typhoon Translate 4B" }
     public var estimatedMemoryMB: Int { tier == .standard ? 1260 : 520 }
     public var maxContextTokens: Int { 4096 }
     public private(set) var isReady = false
@@ -220,6 +220,7 @@ public final class LlamaLLMProvider: LLMProvider {
 
     // MARK: Private — Model Download
 
+// Update ensureModelDownloaded repository strings
     private func ensureModelDownloaded() async throws -> URL {
         let cacheDir = FileManager.default
             .urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -227,14 +228,13 @@ public final class LlamaLLMProvider: LLMProvider {
 
         try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
 
-        let filename = tier == .standard ? "Qwen3.5-2B-Q4_K_S.gguf" : "Qwen3.5-0.8B-Q4_K_S.gguf"
+        let filename = "typhoon-translate-4b-mlx-4bit"
         let modelFile = cacheDir.appendingPathComponent(filename)
         if FileManager.default.fileExists(atPath: modelFile.path) {
             return modelFile
         }
 
-        // Download from HuggingFace (same pattern as ModelDownloadManager)
-        let repo = tier == .standard ? "Qwen/Qwen1.5-1.8B-Chat-GGUF" : "bartowski/Qwen_Qwen3.5-0.8B-GGUF"
+        let repo = "typhoon-ai/typhoon-translate-4b-mlx-4bit"
         let hfURL = URL(string: "https://huggingface.co/\(repo)/resolve/main/\(filename)")!
         let (tempURL, _) = try await URLSession.shared.download(from: hfURL)
         try FileManager.default.moveItem(at: tempURL, to: modelFile)

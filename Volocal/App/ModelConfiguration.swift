@@ -14,9 +14,10 @@ import Combine
 
 // MARK: - ASR Backend
 
-public enum ASRBackend: String, CaseIterable, Codable, Identifiable {
+// Update ASRBackend raw value and display name
+    public enum ASRBackend: String, CaseIterable, Codable, Identifiable {
     /// Parakeet EOU via FluidAudio — English only, ultra-low latency, ANE.
-    case parakeet = "parakeet_eou"
+    case parakeet = "qwen3_asr_0.6b"
     /// Whisper Small via WhisperKit — multilingual including Thai, chunk-based.
     case whisperSmall = "whisper_small"
     /// Whisper Medium via WhisperKit — highest accuracy, heavier on RAM.
@@ -26,7 +27,7 @@ public enum ASRBackend: String, CaseIterable, Codable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .parakeet:     return "Parakeet EOU (English, ANE)"
+        case .parakeet:     return "Qwen3 ASR 0.6B (CoreML)"
         case .whisperSmall: return "Whisper Small (Multilingual, 290 MB)"
         case .whisperMedium:return "Whisper Medium (Multilingual, 780 MB)"
         }
@@ -65,9 +66,9 @@ public enum LLMMemoryTier: String, Codable {
 
 public enum LLMBackend: String, CaseIterable, Codable, Identifiable {
     /// Qwen3.5-2B Q4_K_S via llama.cpp — standard quality/speed.
-    case qwen2B = "qwen3.5_2b"
-    /// Qwen3.5-0.8B Q4_K_S via llama.cpp — memory-efficient, faster.
-    case qwen0_8B = "qwen3.5_0.8b"
+    case qwen2B = "typhoon_translate_4b"
+    /// Qwen3.5-0.8B Q4_K_S via llama.cpp — memory-efficient, faster.  UNSURE IF THIS EXISTS
+    case qwen0_8B = "typhoon_translate_4b_lite"
     /// Apple Foundation Models — iOS 26+, no download required.
     case appleFoundation = "apple_foundation"
 
@@ -75,8 +76,8 @@ public enum LLMBackend: String, CaseIterable, Codable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .qwen2B:          return "Qwen3.5-2B (1.26 GB, ~32 tok/s)"
-        case .qwen0_8B:        return "Qwen3.5-0.8B (520 MB, ~70 tok/s)"
+        case .qwen2B:          return "Typhoon Translate 4B (MLX)"
+        case .qwen0_8B:        return "Typhoon Translate 4B (LITE)"
         case .appleFoundation: return "Apple Foundation Models (iOS 26+, 0 MB)"
         }
     }
