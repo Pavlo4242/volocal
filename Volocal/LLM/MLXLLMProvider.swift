@@ -8,8 +8,6 @@ import Foundation
 import MLXLMCommon
 import MLXLLM
 import MLXHuggingFace
-import HuggingFace
-import Tokenizers
 
 public final class MLXLLMProvider: LLMProvider, @unchecked Sendable {
 
