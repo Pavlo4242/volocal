@@ -14,7 +14,7 @@ options:
 packages:
   llama.swift:
     url: https://github.com/mattt/llama.swift.git
-    from: "2.0.0"
+    from: "1.7130.0"
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio
     from: "0.14.5"          # CoreML ASR (Parakeet EOU), TTS (PocketTTS), VAD (Silero)
@@ -24,7 +24,7 @@ packages:
     from: "3.31.3"        # Apple MLX LLM Common framework
 
   WhisperKit:                # NEW — Thai + 99-language ASR via CoreML Whisper
-    url: https://github.com/argmaxinc/whisperkit
+    url: https://github.com/argmaxinc/WhisperKit
     from: "0.9.0"
 
   swift-huggingface: 
