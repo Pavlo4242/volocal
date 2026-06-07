@@ -81,7 +81,7 @@ jobs:
       - name: Build unsigned app
         run: |
           set -o pipefail
-          xcodebuild build \
+          xcodebuild clean build \
             -scheme "$SCHEME" \
             -configuration "$CONFIGURATION" \
             -derivedDataPath "$DERIVED_DATA" \
