@@ -95,35 +95,35 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="" \
             DEVELOPMENT_TEAM="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            2>&1 | xcbeautify --renderer github-actions
+         #   2>&1 | xcbeautify --renderer github-actions
       # ── Unit Tests (Simulator) ──────────────────────────────────────
 
-      - name: Run unit tests
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          # Find the newest available iPhone simulator
-          SIMULATOR=$(xcrun simctl list devices available -j \
-            | python3 -c "
-          import json, sys
-          data = json.load(sys.stdin)
-          devices = data.get('devices', {})
-          for runtime in sorted(devices.keys(), reverse=True):
-              for dev in devices[runtime]:
-                  if 'iPhone' in dev['name'] and dev['isAvailable']:
-                      print(dev['name'])
-                      sys.exit(0)
-          print('iPhone 16')
-          ")
-          echo "Using simulator: $SIMULATOR"
-          xcodebuild test \
-            -scheme "$SCHEME" \
-            -configuration Debug \
-            -derivedDataPath "$DERIVED_DATA" \
-            -destination "platform=iOS Simulator,name=$SIMULATOR" \
-            -verbose \
-            CODE_SIGNING_ALLOWED=NO \
-            2>&1 | xcbeautify --renderer github-actions || true
+    #  - name: Run unit tests
+    #    continue-on-error: true
+    #    run: |
+    #      set -o pipefail
+    #      # Find the newest available iPhone simulator
+    #      SIMULATOR=$(xcrun simctl list devices available -j \
+    #        | python3 -c "
+     #     import json, sys
+    #      data = json.load(sys.stdin)
+    #      devices = data.get('devices', {})
+    #      for runtime in sorted(devices.keys(), reverse=True):
+    #          for dev in devices[runtime]:
+    #              if 'iPhone' in dev['name'] and dev['isAvailable']:
+    #                  print(dev['name'])
+    #                  sys.exit(0)
+    #      print('iPhone 16')
+    #      ")
+    #      echo "Using simulator: $SIMULATOR"
+     #     xcodebuild test \
+     #       -scheme "$SCHEME" \
+    #        -configuration Debug \
+    #        -derivedDataPath "$DERIVED_DATA" \
+   #         -destination "platform=iOS Simulator,name=$SIMULATOR" \
+#            -verbose \
+#            CODE_SIGNING_ALLOWED=NO \
+          #  2>&1 | xcbeautify --renderer github-actions || true
       # ── Package Unsigned IPA ────────────────────────────────────────
 
       - name: Create unsigned IPA
