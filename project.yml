@@ -14,25 +14,18 @@ options:
 packages:
   llama.swift:
     url: https://github.com/mattt/llama.swift.git
-    from: "1.7130.0"
+    from: "2.0.0"
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio
     from: "0.14.5"          # CoreML ASR (Parakeet EOU), TTS (PocketTTS), VAD (Silero)
 
   mlx-swift-lm:
     url: https://github.com/ml-explore/mlx-swift-lm
-    from: "3.31.3"        # Apple MLX LLM Common framework
+    branch: main        # Apple MLX LLM Common framework
 
   WhisperKit:                # NEW — Thai + 99-language ASR via CoreML Whisper
     url: https://github.com/argmaxinc/WhisperKit
     from: "0.9.0"
-
-  swift-huggingface: 
-    url: https://github.com/huggingface/swift-huggingface
-    from: "0.9.0"
-  swift-transformers: 
-    url: https://github.com/huggingface/swift-transformers
-    from: "1.3.0"
 
 targets:
   Volocal:
@@ -51,12 +44,7 @@ targets:
         product: MLXLLM
       - package: mlx-swift-lm
         product: MLXHuggingFace
-      - package: swift-huggingface
-        product: HuggingFace
-      - package: swift-transformers
-        product: Tokenizers
-      
-      - package: WhisperKit
+      - package: WhisperKit       # NEW
         product: WhisperKit
     settings:
       base:
