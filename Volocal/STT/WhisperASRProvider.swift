@@ -178,8 +178,8 @@ public final class WhisperASRProvider: ASRProvider {
             let options = DecodingOptions(
                 task: .transcribe,
                 language: activeLanguage.rawValue,    // "th", "en", etc.
-                withoutTimestamps: true,
-                usePrefillPrompt: true
+                usePrefillPrompt: true,
+                withoutTimestamps: true
             )
             let results = try await whisper.transcribe(
                 audioArray: samples,

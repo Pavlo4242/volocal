@@ -183,7 +183,9 @@ public final class LlamaLLMProvider: LLMProvider {
                         var buf = [CChar](repeating: 0, count: 256)
                         let nChars = llama_token_to_piece(vocab, newToken, &buf, 256, 0, true)
                         guard nChars > 0 else { break }
-                        let piece = String(cString: buf)
+                        let nullIndex = buf.firstIndex(of: 0) ?? buf.count
+                        let validBytes = buf[0..<nullIndex].map { UInt8(bitPattern: $0) }
+                        let piece = String(decoding: validBytes, as: UTF8.self)
 
                         nGenerated += 1
                         let isLast = nGenerated >= 512   // safety cap
@@ -197,7 +199,7 @@ public final class LlamaLLMProvider: LLMProvider {
                     }
 
                     llama_sampler_free(samplerChain)
-                    llama_kv_cache_seq_rm(context, -1, -1, -1)
+                    llama_kv_cache_clear(context)
 
                     let elapsed = Date().timeIntervalSince(startTime)
                     if elapsed > 0 {
