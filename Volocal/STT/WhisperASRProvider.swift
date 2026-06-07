@@ -176,8 +176,8 @@ public final class WhisperASRProvider: ASRProvider {
         guard let whisper, !samples.isEmpty else { return }
         do {
             let options = DecodingOptions(
-                language: activeLanguage.rawValue,    // "th", "en", etc.
                 task: .transcribe,
+                language: activeLanguage.rawValue,    // "th", "en", etc.
                 withoutTimestamps: true,
                 usePrefillPrompt: true
             )
@@ -185,7 +185,7 @@ public final class WhisperASRProvider: ASRProvider {
                 audioArray: samples,
                 decodeOptions: options
             )
-            let text = results.map(\.text).joined(separator: " ").trimmingCharacters(in: .whitespaces)
+            let text = results.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return }
 
             let asrResult = ASRResult(

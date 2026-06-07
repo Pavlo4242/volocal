@@ -50,7 +50,7 @@ final class UnifiedModelManager: ObservableObject {
         }
 
         // STT: check if Parakeet EOU models exist
-        let sttDir = ModelRegistry.modelsDirectory.appendingPathComponent(Repo.qwen3Asr0_6b.folderName)
+        let sttDir = ModelRegistry.modelsDirectory.appendingPathComponent(Repo.parakeetEou320.folderName)
         let encoderPath = sttDir.appendingPathComponent("streaming_encoder.mlmodelc")
         if FileManager.default.fileExists(atPath: encoderPath.path) {
             modelStates[.stt] = .downloaded

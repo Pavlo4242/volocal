@@ -76,7 +76,7 @@ public final class ParakeetASRProvider: ASRProvider {
     public func prepare() async throws {
         guard !isReady else { return }
         do {
-            let modelsDir = STTManager.modelsDirectory()
+            let modelsDir = await STTManager.modelsDirectory()
             let modelDir = modelsDir.appendingPathComponent(Repo.parakeetEou320.folderName)
 
             let encoderPath = modelDir.appendingPathComponent("streaming_encoder.mlmodelc")
@@ -86,7 +86,7 @@ public final class ParakeetASRProvider: ASRProvider {
 
             let config = SlidingWindowAsrConfig.default // FluidAudio's config wrapper
             let manager = SlidingWindowAsrManager(config: config)
-            try await manager.loadModels(from: modelDir)
+            try await manager.loadModels(at: modelDir)
 
             self.asrModels = nil
             self.asrManager = manager
