@@ -14,14 +14,14 @@ options:
 packages:
   llama.swift:
     url: https://github.com/mattt/llama.swift.git
-    from: "3.31.3"
+    from: "2.9544.0"
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio
     from: "0.14.5"          # CoreML ASR (Parakeet EOU), TTS (PocketTTS), VAD (Silero)
 
   mlx-swift-lm:
     url: https://github.com/ml-explore/mlx-swift-lm
-    branch: main        # Apple MLX LLM Common framework
+    from: "2.293"        # Apple MLX LLM Common framework
 
   swift-transformers:
     url: https://github.com/huggingface/swift-transformers
